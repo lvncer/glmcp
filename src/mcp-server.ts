@@ -285,7 +285,9 @@ class VRMMCPServer {
         if (this.sessionManager.isAvailable()) {
           await this.sessionManager.deleteSession(transport.sessionId);
         }
-        this.logEvent("mcp_sse_disconnected", { sessionId: transport.sessionId });
+        this.logEvent("mcp_sse_disconnected", {
+          sessionId: transport.sessionId,
+        });
         console.error(`✗ MCP SSE client disconnected: ${transport.sessionId}`);
       });
 
@@ -587,68 +589,65 @@ class VRMMCPServer {
     }));
 
     // Resources 一覧
-    this.mcpServer.setRequestHandler(
-      ListResourcesRequestSchema,
-      async () => ({
-        resources: [
-          {
-            uri: "mcp://vrm/capabilities",
-            name: "VRM Capabilities",
-            mimeType: "application/json",
-            description: "提供しているツール一覧やエンドポイントの概要",
-          },
-          {
-            uri: "mcp://vrm/status",
-            name: "VRM Status",
-            mimeType: "application/json",
-            description:
-              "現在のVRM状態（モデル、表情、ポーズ、読み込み済みアニメーション）",
-          },
-          {
-            uri: "mcp://vrm/files",
-            name: "Available Files",
-            mimeType: "application/json",
-            description: "利用可能なVRMモデル/アニメーションの一覧",
-          },
-          {
-            uri: "mcp://vrm/docs",
-            name: "VRM Docs",
-            mimeType: "text/markdown",
-            description: "使い方ドキュメントとワークフロー",
-          },
-          {
-            uri: "mcp://vrm/examples",
-            name: "VRM Examples",
-            mimeType: "application/json",
-            description: "よく使う操作のスニペット集",
-          },
-          {
-            uri: "mcp://vrm/health",
-            name: "VRM Health",
-            mimeType: "application/json",
-            description: "サーバーの死活/稼働情報",
-          },
-          {
-            uri: "mcp://vrm/session",
-            name: "VRM Session",
-            mimeType: "application/json",
-            description: "現在の接続やメトリクス",
-          },
-          {
-            uri: "mcp://vrm/logs",
-            name: "VRM Logs",
-            mimeType: "application/json",
-            description: "直近の重要イベントログ",
-          },
-          {
-            uri: "mcp://vrm/schema",
-            name: "VRM Schema",
-            mimeType: "application/json",
-            description: "提供ツールのフルスキーマ",
-          },
-        ],
-      })
-    );
+    this.mcpServer.setRequestHandler(ListResourcesRequestSchema, async () => ({
+      resources: [
+        {
+          uri: "mcp://vrm/capabilities",
+          name: "VRM Capabilities",
+          mimeType: "application/json",
+          description: "提供しているツール一覧やエンドポイントの概要",
+        },
+        {
+          uri: "mcp://vrm/status",
+          name: "VRM Status",
+          mimeType: "application/json",
+          description:
+            "現在のVRM状態（モデル、表情、ポーズ、読み込み済みアニメーション）",
+        },
+        {
+          uri: "mcp://vrm/files",
+          name: "Available Files",
+          mimeType: "application/json",
+          description: "利用可能なVRMモデル/アニメーションの一覧",
+        },
+        {
+          uri: "mcp://vrm/docs",
+          name: "VRM Docs",
+          mimeType: "text/markdown",
+          description: "使い方ドキュメントとワークフロー",
+        },
+        {
+          uri: "mcp://vrm/examples",
+          name: "VRM Examples",
+          mimeType: "application/json",
+          description: "よく使う操作のスニペット集",
+        },
+        {
+          uri: "mcp://vrm/health",
+          name: "VRM Health",
+          mimeType: "application/json",
+          description: "サーバーの死活/稼働情報",
+        },
+        {
+          uri: "mcp://vrm/session",
+          name: "VRM Session",
+          mimeType: "application/json",
+          description: "現在の接続やメトリクス",
+        },
+        {
+          uri: "mcp://vrm/logs",
+          name: "VRM Logs",
+          mimeType: "application/json",
+          description: "直近の重要イベントログ",
+        },
+        {
+          uri: "mcp://vrm/schema",
+          name: "VRM Schema",
+          mimeType: "application/json",
+          description: "提供ツールのフルスキーマ",
+        },
+      ],
+    }));
 
     // Resource 読み取り
     this.mcpServer.setRequestHandler(
@@ -820,9 +819,7 @@ class VRMMCPServer {
             latest: this.recentEvents.slice(-50),
           };
           return {
-            contents: [
-              { type: "text", text: JSON.stringify(logs, null, 2) },
-            ],
+            contents: [{ type: "text", text: JSON.stringify(logs, null, 2) }],
           };
         }
 
@@ -840,7 +837,10 @@ class VRMMCPServer {
             baseDir = this.vrmaAnimationsDir;
             servedPrefix = "/animations/";
           } else {
-            throw new McpError(ErrorCode.InvalidRequest, `Unsupported file type: ${name}`);
+            throw new McpError(
+              ErrorCode.InvalidRequest,
+              `Unsupported file type: ${name}`
+            );
           }
           const fullPath = path.join(baseDir, name);
           try {
@@ -853,12 +853,13 @@ class VRMMCPServer {
               mtime: stat.mtime.toISOString(),
             };
             return {
-              contents: [
-                { type: "text", text: JSON.stringify(info, null, 2) },
-              ],
+              contents: [{ type: "text", text: JSON.stringify(info, null, 2) }],
             };
           } catch (error) {
-            throw new McpError(ErrorCode.InvalidRequest, `File not found: ${name}`);
+            throw new McpError(
+              ErrorCode.InvalidRequest,
+              `File not found: ${name}`
+            );
           }
         }
 
@@ -1160,7 +1161,10 @@ class VRMMCPServer {
     const entry = { ts: new Date().toISOString(), event, data };
     this.recentEvents.push(entry);
     if (this.recentEvents.length > this.maxRecentEvents) {
-      this.recentEvents.splice(0, this.recentEvents.length - this.maxRecentEvents);
+      this.recentEvents.splice(
+        0,
+        this.recentEvents.length - this.maxRecentEvents
+      );
     }
   }
 
@@ -1418,7 +1422,11 @@ class VRMMCPServer {
       type: "play_gltf_animation",
       data: { animationName, loop, fadeInDuration },
     });
-    this.logEvent("play_gltf_animation", { animationName, loop, fadeInDuration });
+    this.logEvent("play_gltf_animation", {
+      animationName,
+      loop,
+      fadeInDuration,
+    });
 
     return {
       content: [
