@@ -22,7 +22,10 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import fetch from "node-fetch";
+import {
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 
 const REMOTE_URL = process.env.MCP_REMOTE_URL || "http://localhost:3000/api/mcp/sse";
 const API_KEY = process.env.MCP_API_KEY;
@@ -89,6 +92,40 @@ class MCPGateway {
           return result;
         } catch (error) {
           console.error("Failed to call tool on remote:", error);
+          throw error;
+        }
+      }
+    );
+
+    // Resources: list をブリッジ
+    this.server.setRequestHandler(
+      ListResourcesRequestSchema,
+      async () => {
+        try {
+          const result = await this.client.request(
+            { method: "resources/list" } as any,
+            ListResourcesRequestSchema
+          );
+          return result;
+        } catch (error) {
+          console.error("Failed to list resources from remote:", error);
+          return { resources: [] };
+        }
+      }
+    );
+
+    // Resources: read をブリッジ
+    this.server.setRequestHandler(
+      ReadResourceRequestSchema,
+      async (request: any) => {
+        try {
+          const result = await this.client.request(
+            { method: "resources/read", params: request.params } as any,
+            ReadResourceRequestSchema
+          );
+          return result;
+        } catch (error) {
+          console.error("Failed to read resource from remote:", error);
           throw error;
         }
       }
