@@ -18,6 +18,8 @@ import {
   ErrorCode,
   ListToolsRequestSchema,
   McpError,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import express from "express";
 import { WebSocketServer, WebSocket } from "ws";
@@ -96,6 +98,7 @@ class VRMMCPServer {
   private viewerSSEClients = new Set<express.Response>();
   private rateLimiter = new RateLimiter(60, 1);
   private sessionManager = getSessionManager();
+  private serverStartTime: number;
 
   // 環境変数から読み取り
   private vrmModelsDir: string;
@@ -119,6 +122,8 @@ class VRMMCPServer {
       ? process.env.ALLOWED_ORIGINS.split(",")
       : ["http://localhost:3000", "http://localhost:5173"];
 
+    this.serverStartTime = Date.now();
+
     console.error("=== VRM MCP Server Configuration ===");
     console.error(`VRM Models Dir: ${this.vrmModelsDir}`);
     console.error(`VRMA Animations Dir: ${this.vrmaAnimationsDir}`);
@@ -141,6 +146,7 @@ class VRMMCPServer {
       {
         capabilities: {
           tools: {},
+          resources: {},
         },
       }
     );
@@ -379,7 +385,9 @@ class VRMMCPServer {
 
       if (this.vrmState.modelPath) {
         const filePath = `/models/${this.vrmState.modelPath}`;
-        res.write(`event: load_vrm_model\ndata: ${JSON.stringify({ filePath })}\n\n`);
+        res.write(
+          `event: load_vrm_model\ndata: ${JSON.stringify({ filePath })}\n\n`
+        );
       }
 
       // 心拍送信
@@ -571,6 +579,407 @@ class VRMMCPServer {
       ],
     }));
 
+    // Resources 一覧
+    this.mcpServer.setRequestHandler(ListResourcesRequestSchema, async () => ({
+      resources: [
+        {
+          uri: "mcp://vrm/capabilities",
+          name: "VRM Capabilities",
+          mimeType: "application/json",
+          description: "提供しているツール一覧やエンドポイントの概要",
+        },
+        {
+          uri: "mcp://vrm/status",
+          name: "VRM Status",
+          mimeType: "application/json",
+          description:
+            "現在のVRM状態（モデル、表情、ポーズ、読み込み済みアニメーション）",
+        },
+        {
+          uri: "mcp://vrm/files",
+          name: "Available Files",
+          mimeType: "application/json",
+          description: "利用可能なVRMモデル/アニメーションの一覧",
+        },
+        {
+          uri: "mcp://vrm/docs",
+          name: "VRM Docs",
+          mimeType: "text/markdown",
+          description: "使い方ドキュメントとワークフロー",
+        },
+        {
+          uri: "mcp://vrm/examples",
+          name: "VRM Examples",
+          mimeType: "application/json",
+          description: "よく使う操作のスニペット集",
+        },
+        {
+          uri: "mcp://vrm/health",
+          name: "VRM Health",
+          mimeType: "application/json",
+          description: "サーバーの死活/稼働情報",
+        },
+        {
+          uri: "mcp://vrm/session",
+          name: "VRM Session",
+          mimeType: "application/json",
+          description: "現在の接続やメトリクス",
+        },
+        {
+          uri: "mcp://vrm/schema",
+          name: "VRM Schema",
+          mimeType: "application/json",
+          description: "提供ツールのフルスキーマ",
+        },
+      ],
+    }));
+
+    // Resource 読み取り
+    this.mcpServer.setRequestHandler(
+      ReadResourceRequestSchema,
+      async (request) => {
+        const uri = (request.params as any).uri as string;
+
+        if (uri === "mcp://vrm/capabilities") {
+          const tools = [
+            "load_vrm_model",
+            "set_vrm_expression",
+            "set_vrm_pose",
+            "animate_vrm_bone",
+            "get_vrm_status",
+            "list_vrm_files",
+            "load_gltf_animation",
+            "play_gltf_animation",
+            "stop_gltf_animation",
+          ];
+          const payload = {
+            server: {
+              name: "vrm-mcp-server",
+              version: "0.1.0",
+            },
+            endpoints: {
+              sse: "/api/mcp/sse",
+              messages: "/api/mcp/messages",
+            },
+            tools,
+          };
+          return {
+            contents: [
+              { type: "text", text: JSON.stringify(payload, null, 2) },
+            ],
+          };
+        }
+
+        if (uri === "mcp://vrm/status") {
+          const status = {
+            isLoaded: this.vrmState.isLoaded,
+            modelPath: this.vrmState.modelPath,
+            expressions: Object.fromEntries(this.vrmState.expressions),
+            pose: this.vrmState.pose,
+            loadedAnimations: this.vrmState.loadedAnimations,
+          };
+          return {
+            contents: [{ type: "text", text: JSON.stringify(status, null, 2) }],
+          };
+        }
+
+        if (uri === "mcp://vrm/files") {
+          const result: any = {};
+          try {
+            const modelFiles = await fs.readdir(this.vrmModelsDir);
+            result.models = modelFiles.filter((f) => f.endsWith(".vrm"));
+          } catch {
+            result.models = [];
+          }
+          try {
+            const animFiles = await fs.readdir(this.vrmaAnimationsDir);
+            result.animations = animFiles.filter(
+              (f) => f.endsWith(".glb") || f.endsWith(".gltf")
+            );
+          } catch {
+            result.animations = [];
+          }
+          return {
+            contents: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
+        if (uri === "mcp://vrm/docs") {
+          const md = `# VRM MCP Docs\n\n## 概要\nVRMモデルの読み込み・制御・アニメーションを提供します。\n\n## 主なツール\n- load_vrm_model(filePath)\n- set_vrm_expression(expression, weight)\n- set_vrm_pose(position?, rotation?)\n- animate_vrm_bone(boneName, rotation)\n- get_vrm_status()\n- list_vrm_files(type?)\n- load_gltf_animation(animationPath, animationName)\n- play_gltf_animation(animationName, loop?, fadeInDuration?)\n- stop_gltf_animation(fadeOutDuration?)\n\n## 典型フロー\n1. list_vrm_files → モデル名確認\n2. load_vrm_model → set_vrm_expression → set_vrm_pose\n3. load_gltf_animation → play_gltf_animation\n`;
+          return {
+            contents: [{ type: "text", text: md }],
+          };
+        }
+
+        if (uri === "mcp://vrm/examples") {
+          const examples = {
+            examples: [
+              {
+                name: "基本ロードと表情・ポーズ",
+                calls: [
+                  { tool: "list_vrm_files", arguments: { type: "models" } },
+                  {
+                    tool: "load_vrm_model",
+                    arguments: { filePath: "lvncer.vrm" },
+                  },
+                  {
+                    tool: "set_vrm_expression",
+                    arguments: { expression: "happy", weight: 0.8 },
+                  },
+                  {
+                    tool: "set_vrm_pose",
+                    arguments: {
+                      position: { x: 0, y: 0, z: 0 },
+                      rotation: { x: 0, y: 0, z: 0 },
+                    },
+                  },
+                ],
+              },
+              {
+                name: "アニメーション再生",
+                calls: [
+                  { tool: "list_vrm_files", arguments: { type: "animations" } },
+                  {
+                    tool: "load_gltf_animation",
+                    arguments: {
+                      animationPath: "walk.glb",
+                      animationName: "walk",
+                    },
+                  },
+                  {
+                    tool: "play_gltf_animation",
+                    arguments: {
+                      animationName: "walk",
+                      loop: true,
+                      fadeInDuration: 0.2,
+                    },
+                  },
+                ],
+              },
+            ],
+          };
+          return {
+            contents: [
+              { type: "text", text: JSON.stringify(examples, null, 2) },
+            ],
+          };
+        }
+
+        if (uri === "mcp://vrm/health") {
+          const health = {
+            version: "0.1.0",
+            startedAt: new Date(this.serverStartTime).toISOString(),
+            uptimeSec: Math.floor((Date.now() - this.serverStartTime) / 1000),
+            sseSessions: this.sseTransports.size,
+            viewerClients: this.viewerSSEClients.size,
+            wsClients: this.connectedClients.size,
+            redis: this.sessionManager.isAvailable()
+              ? "ENABLED"
+              : "DISABLED (in-memory)",
+          };
+          return {
+            contents: [{ type: "text", text: JSON.stringify(health, null, 2) }],
+          };
+        }
+
+        if (uri === "mcp://vrm/session") {
+          const session = {
+            sseSessionIds: Array.from(this.sseTransports.keys()),
+            totals: {
+              sseSessions: this.sseTransports.size,
+              viewerClients: this.viewerSSEClients.size,
+              wsClients: this.connectedClients.size,
+            },
+          };
+          return {
+            contents: [
+              { type: "text", text: JSON.stringify(session, null, 2) },
+            ],
+          };
+        }
+
+        if (uri === "mcp://vrm/schema") {
+          const schema = {
+            tools: [
+              {
+                name: "load_vrm_model",
+                description: "VRMモデルファイルを読み込む",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    filePath: {
+                      type: "string",
+                      description:
+                        "VRMファイル名（例: character.vrm）環境変数 VRM_MODELS_DIR からの相対パス",
+                    },
+                  },
+                  required: ["filePath"],
+                },
+              },
+              {
+                name: "set_vrm_expression",
+                description: "VRMモデルの表情を設定する",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    expression: {
+                      type: "string",
+                      description:
+                        "設定する表情（例: happy, angry, sad, surprised, neutral）",
+                    },
+                    weight: {
+                      type: "number",
+                      minimum: 0,
+                      maximum: 1,
+                      description: "表情の強さ (0.0-1.0)",
+                    },
+                  },
+                  required: ["expression", "weight"],
+                },
+              },
+              {
+                name: "set_vrm_pose",
+                description: "VRMモデルの位置と回転を設定する",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    position: {
+                      type: "object",
+                      properties: {
+                        x: { type: "number" },
+                        y: { type: "number" },
+                        z: { type: "number" },
+                      },
+                      description: "モデルの位置",
+                    },
+                    rotation: {
+                      type: "object",
+                      properties: {
+                        x: { type: "number", description: "ラジアン" },
+                        y: { type: "number", description: "ラジアン" },
+                        z: { type: "number", description: "ラジアン" },
+                      },
+                      description: "モデルの回転",
+                    },
+                  },
+                },
+              },
+              {
+                name: "animate_vrm_bone",
+                description: "指定されたボーンを回転させる",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    boneName: {
+                      type: "string",
+                      description:
+                        "ボーン名（例: leftUpperArm, rightUpperArm, head, spine）",
+                    },
+                    rotation: {
+                      type: "object",
+                      properties: {
+                        x: { type: "number" },
+                        y: { type: "number" },
+                        z: { type: "number" },
+                        w: { type: "number" },
+                      },
+                      description: "クォータニオン回転",
+                    },
+                  },
+                  required: ["boneName", "rotation"],
+                },
+              },
+              {
+                name: "get_vrm_status",
+                description: "VRMモデルの現在の状態を取得する",
+                inputSchema: {
+                  type: "object",
+                  properties: {},
+                },
+              },
+              {
+                name: "list_vrm_files",
+                description:
+                  "利用可能なVRMモデルとglTFアニメーションファイルの一覧を取得する",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    type: {
+                      type: "string",
+                      enum: ["models", "animations", "all"],
+                      description: "取得するファイルの種類（デフォルト: all）",
+                    },
+                  },
+                },
+              },
+              {
+                name: "load_gltf_animation",
+                description: "glTFファイルからアニメーションを読み込む",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    animationPath: {
+                      type: "string",
+                      description:
+                        "glTFファイル名（例: walk.glb または walk.gltf）環境変数 VRMA_ANIMATIONS_DIR からの相対パス",
+                    },
+                    animationName: {
+                      type: "string",
+                      description: "アニメーション識別名（再生時に使用）",
+                    },
+                  },
+                  required: ["animationPath", "animationName"],
+                },
+              },
+              {
+                name: "play_gltf_animation",
+                description: "読み込み済みのglTFアニメーションを再生する",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    animationName: {
+                      type: "string",
+                      description: "再生するアニメーション名",
+                    },
+                    loop: {
+                      type: "boolean",
+                      description: "ループ再生するか",
+                    },
+                    fadeInDuration: {
+                      type: "number",
+                      description: "フェードイン時間（秒）",
+                    },
+                  },
+                  required: ["animationName"],
+                },
+              },
+              {
+                name: "stop_gltf_animation",
+                description: "再生中のglTFアニメーションを停止する",
+                inputSchema: {
+                  type: "object",
+                  properties: {
+                    fadeOutDuration: {
+                      type: "number",
+                      description: "フェードアウト時間（秒）",
+                    },
+                  },
+                },
+              },
+            ],
+          };
+          return {
+            contents: [{ type: "text", text: JSON.stringify(schema, null, 2) }],
+          };
+        }
+
+        throw new McpError(
+          ErrorCode.InvalidRequest,
+          `Unknown resource URI: ${uri}`
+        );
+      }
+    );
+
     // ツール実行ハンドラー
     this.mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
@@ -678,7 +1087,9 @@ class VRMMCPServer {
         }
       }
     });
-    console.error(`SSE broadcast: ${eventType} -> viewers=${totals.total} writable=${totals.writable}`);
+    console.error(
+      `SSE broadcast: ${eventType} -> viewers=${totals.total} writable=${totals.writable}`
+    );
   }
 
   // ===== ツール実装 =====
@@ -838,7 +1249,9 @@ class VRMMCPServer {
     if (type === "animations" || type === "all") {
       try {
         const files = await fs.readdir(this.vrmaAnimationsDir);
-        result.animations = files.filter((f) => f.endsWith(".glb") || f.endsWith(".gltf"));
+        result.animations = files.filter(
+          (f) => f.endsWith(".glb") || f.endsWith(".gltf")
+        );
       } catch (error) {
         result.animations = [];
       }
