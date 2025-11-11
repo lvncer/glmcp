@@ -99,6 +99,8 @@ class VRMMCPServer {
   private rateLimiter = new RateLimiter(60, 1);
   private sessionManager = getSessionManager();
   private serverStartTime: number;
+  private recentEvents: any[];
+  private maxRecentEvents = 100;
 
   // 環境変数から読み取り
   private vrmModelsDir: string;
@@ -123,6 +125,7 @@ class VRMMCPServer {
       : ["http://localhost:3000", "http://localhost:5173"];
 
     this.serverStartTime = Date.now();
+    this.recentEvents = [];
 
     console.error("=== VRM MCP Server Configuration ===");
     console.error(`VRM Models Dir: ${this.vrmModelsDir}`);
@@ -282,12 +285,16 @@ class VRMMCPServer {
         if (this.sessionManager.isAvailable()) {
           await this.sessionManager.deleteSession(transport.sessionId);
         }
+        this.logEvent("mcp_sse_disconnected", {
+          sessionId: transport.sessionId,
+        });
         console.error(`✗ MCP SSE client disconnected: ${transport.sessionId}`);
       });
 
       try {
         // connect() が内部で transport.start() を自動実行するため、明示的な start() は不要
         await this.mcpServer.connect(transport);
+        this.logEvent("mcp_sse_connected", { sessionId: transport.sessionId });
         console.error(`✓ MCP SSE client connected: ${transport.sessionId}`);
 
         // 心拍送信 (30秒ごと) + セッション延長
@@ -372,6 +379,7 @@ class VRMMCPServer {
       }
 
       this.viewerSSEClients.add(res);
+      this.logEvent("viewer_sse_connected", {});
       console.error("✓ Viewer SSE client connected");
 
       // 接続時に現在の状態を送信
@@ -402,6 +410,7 @@ class VRMMCPServer {
       req.on("close", () => {
         clearInterval(heartbeat);
         this.viewerSSEClients.delete(res);
+        this.logEvent("viewer_sse_disconnected", {});
         console.error("✗ Viewer SSE client disconnected");
       });
     });
@@ -626,6 +635,12 @@ class VRMMCPServer {
           description: "現在の接続やメトリクス",
         },
         {
+          uri: "mcp://vrm/logs",
+          name: "VRM Logs",
+          mimeType: "application/json",
+          description: "直近の重要イベントログ",
+        },
+        {
           uri: "mcp://vrm/schema",
           name: "VRM Schema",
           mimeType: "application/json",
@@ -638,7 +653,16 @@ class VRMMCPServer {
     this.mcpServer.setRequestHandler(
       ReadResourceRequestSchema,
       async (request) => {
-        const uri = (request.params as any).uri as string;
+        const params = (request as any).params ?? {};
+        try {
+          console.error("resources/read params:", params);
+        } catch {}
+        const uri = (params as any).uri as string | undefined;
+        if (!uri) {
+          console.error("resources/read missing uri param");
+          throw new McpError(ErrorCode.InvalidRequest, "Missing uri param");
+        }
+        this.logEvent("resource_read_request", { uri });
 
         if (uri === "mcp://vrm/capabilities") {
           const tools = [
@@ -796,6 +820,56 @@ class VRMMCPServer {
               { type: "text", text: JSON.stringify(session, null, 2) },
             ],
           };
+        }
+
+        if (uri === "mcp://vrm/logs") {
+          const logs = {
+            total: this.recentEvents.length,
+            latest: this.recentEvents.slice(-50),
+          };
+          return {
+            contents: [{ type: "text", text: JSON.stringify(logs, null, 2) }],
+          };
+        }
+
+        if (uri.startsWith("mcp://vrm/file/")) {
+          const name = uri.substring("mcp://vrm/file/".length);
+          let kind = "";
+          let baseDir = "";
+          let servedPrefix = "";
+          if (name.endsWith(".vrm")) {
+            kind = "model";
+            baseDir = this.vrmModelsDir;
+            servedPrefix = "/models/";
+          } else if (name.endsWith(".glb") || name.endsWith(".gltf")) {
+            kind = "animation";
+            baseDir = this.vrmaAnimationsDir;
+            servedPrefix = "/animations/";
+          } else {
+            throw new McpError(
+              ErrorCode.InvalidRequest,
+              `Unsupported file type: ${name}`
+            );
+          }
+          const fullPath = path.join(baseDir, name);
+          try {
+            const stat = await fs.stat(fullPath);
+            const info = {
+              kind,
+              name,
+              path: `${servedPrefix}${name}`,
+              size: stat.size,
+              mtime: stat.mtime.toISOString(),
+            };
+            return {
+              contents: [{ type: "text", text: JSON.stringify(info, null, 2) }],
+            };
+          } catch (error) {
+            throw new McpError(
+              ErrorCode.InvalidRequest,
+              `File not found: ${name}`
+            );
+          }
         }
 
         if (uri === "mcp://vrm/schema") {
@@ -1092,6 +1166,17 @@ class VRMMCPServer {
     );
   }
 
+  private logEvent(event: string, data: any): void {
+    const entry = { ts: new Date().toISOString(), event, data };
+    this.recentEvents.push(entry);
+    if (this.recentEvents.length > this.maxRecentEvents) {
+      this.recentEvents.splice(
+        0,
+        this.recentEvents.length - this.maxRecentEvents
+      );
+    }
+  }
+
   // ===== ツール実装 =====
 
   private async loadVRMModel(args: { filePath: string }) {
@@ -1111,6 +1196,7 @@ class VRMMCPServer {
         type: "load_vrm_model",
         data: { filePath: `/models/${filePath}` },
       });
+      this.logEvent("load_vrm_model", { filePath });
 
       return {
         content: [
@@ -1140,6 +1226,7 @@ class VRMMCPServer {
       type: "set_vrm_expression",
       data: { expression, weight },
     });
+    this.logEvent("set_vrm_expression", { expression, weight });
 
     return {
       content: [
@@ -1177,6 +1264,7 @@ class VRMMCPServer {
       type: "set_vrm_pose",
       data: { position, rotation },
     });
+    this.logEvent("set_vrm_pose", { position, rotation });
 
     return {
       content: [
@@ -1203,6 +1291,7 @@ class VRMMCPServer {
       type: "animate_vrm_bone",
       data: { boneName, rotation },
     });
+    this.logEvent("animate_vrm_bone", { boneName });
 
     return {
       content: [
@@ -1222,6 +1311,8 @@ class VRMMCPServer {
       pose: this.vrmState.pose,
       loadedAnimations: this.vrmState.loadedAnimations,
     };
+
+    this.logEvent("get_vrm_status", {});
 
     return {
       content: [
@@ -1267,6 +1358,8 @@ class VRMMCPServer {
       result.animations.forEach((f: string) => summary.push(`  - ${f}`));
     }
 
+    this.logEvent("list_vrm_files", { type });
+
     return {
       content: [
         {
@@ -1301,6 +1394,7 @@ class VRMMCPServer {
           animationName,
         },
       });
+      this.logEvent("load_gltf_animation", { animationName, animationPath });
 
       return {
         content: [
@@ -1337,6 +1431,11 @@ class VRMMCPServer {
       type: "play_gltf_animation",
       data: { animationName, loop, fadeInDuration },
     });
+    this.logEvent("play_gltf_animation", {
+      animationName,
+      loop,
+      fadeInDuration,
+    });
 
     return {
       content: [
@@ -1357,6 +1456,7 @@ class VRMMCPServer {
       type: "stop_gltf_animation",
       data: { fadeOutDuration },
     });
+    this.logEvent("stop_gltf_animation", { fadeOutDuration });
 
     return {
       content: [
