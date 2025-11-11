@@ -1345,6 +1345,8 @@ class VRMMCPServer {
       result.animations.forEach((f: string) => summary.push(`  - ${f}`));
     }
 
+    this.logEvent("list_vrm_files", { type });
+
     return {
       content: [
         {
@@ -1353,7 +1355,6 @@ class VRMMCPServer {
         },
       ],
     };
-    this.logEvent("list_vrm_files", { type });
   }
 
   private async loadGLTFAnimation(args: {
