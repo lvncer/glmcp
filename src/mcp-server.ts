@@ -653,7 +653,16 @@ class VRMMCPServer {
     this.mcpServer.setRequestHandler(
       ReadResourceRequestSchema,
       async (request) => {
-        const uri = (request.params as any).uri as string;
+        const params = (request as any).params ?? {};
+        try {
+          console.error("resources/read params:", params);
+        } catch {}
+        const uri = (params as any).uri as string | undefined;
+        if (!uri) {
+          console.error("resources/read missing uri param");
+          throw new McpError(ErrorCode.InvalidRequest, "Missing uri param");
+        }
+        this.logEvent("resource_read_request", { uri });
 
         if (uri === "mcp://vrm/capabilities") {
           const tools = [
