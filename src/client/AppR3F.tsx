@@ -66,7 +66,41 @@ function Scene(props: {
       const gltf = await loader.loadAsync(animationPath);
       const clips: THREE.AnimationClip[] = (gltf as any).animations || [];
       if (clips.length > 0) {
-        loadedClipsRef.current.set(animationName, clips[0]);
+        const sourceRoot: THREE.Object3D | undefined = (gltf as any).scene;
+        const targetRoot =
+          (rootRef.current?.children[0] as THREE.Object3D | undefined) ??
+          ((rootRef.current as unknown) as THREE.Object3D | null);
+        let clipToUse = clips[0];
+        if (sourceRoot && targetRoot) {
+          try {
+            const mod: any = await import(
+              "three/examples/jsm/utils/SkeletonUtils.js"
+            );
+            const retargetClipFn =
+              typeof mod?.retargetClip === "function"
+                ? mod.retargetClip
+                : typeof mod?.default?.retargetClip === "function"
+                ? mod.default.retargetClip
+                : null;
+            const retargeted = retargetClipFn
+              ? retargetClipFn(sourceRoot, targetRoot, clipToUse)
+              : null;
+            if (retargeted) {
+              clipToUse = retargeted as THREE.AnimationClip;
+            } else {
+              console.warn(
+                "retargetClip not available; using original clip (bone names must match)"
+              );
+            }
+          } catch (err) {
+            console.warn("Retarget failed; using original clip", err);
+          }
+        } else {
+          console.warn(
+            "No target or source root for retargeting; using original clip"
+          );
+        }
+        loadedClipsRef.current.set(animationName, clipToUse);
       } else {
         console.warn("No animations found in glTF:", animationPath);
       }
