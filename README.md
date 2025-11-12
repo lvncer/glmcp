@@ -1,7 +1,7 @@
-# VRMCP (VRM MCP Server)
+# Coeur MCP Server
 
-VRM モデルを AI が自然言語で制御できる MCP サーバー。
-Claude Desktop から自然言語で指示するだけで、Web ブラウザで VRM モデルがリアルタイムに動きます。
+gltf モデルを AI が自然言語で制御できる MCP サーバー。
+Claude Desktop から自然言語で指示するだけで、Web ブラウザで gltf モデルがリアルタイムに動きます。
 
 ## セットアップ
 
@@ -18,8 +18,8 @@ Claude Desktop から自然言語で指示するだけで、Web ブラウザで 
      ```json
      {
        "mcpServers": {
-         "vrmcp": {
-           "url": "https://vrmcp.up.railway.app/api/mcp/sse",
+         "coeur": {
+           "url": "https://coeur.up.railway.app/api/mcp/sse",
            "headers": {
              "x-api-key": "your-super-secret-key-12345"
            }
@@ -51,21 +51,26 @@ Claude Desktop から自然言語で指示するだけで、Web ブラウザで 
 ## プロジェクト構造
 
 ```sh
-vrm-mcp/
+coeur/
 ├── src/
-│   ├── mcp-server.ts          # MCPサーバー実装（stdio + SSE）
-│   ├── redis-client.ts
-│   └── gateway.ts             # stdio↔SSEゲートウェイ（Claude Desktop用）
-├── api/
+│   ├── app/
+│   │   └── server.ts
+│   ├── services/
+│   │   └── index.ts            # VRMサービス
 │   ├── mcp/
-│   │   ├── sse.ts             # MCP SSEエンドポイント
-│   │   └── messages.ts        # MCP POSTエンドポイント
-│   └── viewer/
-│       └── sse.ts             # Viewer SSEエンドポイント
+│   │   ├── resourceHandler.ts  # MCPリソースハンドラー
+│   │   ├── resources.ts        # MCPリソース
+│   │   ├── toolHandlers.ts     # MCPツールハンドラー
+│   │   └── tools.ts            # MCPツール
+│   ├── client/
+│   │   └── index.ts            # VRMサービス
+│   ├── mcp-server.ts           # MCPサーバー実装（stdio + SSE）
+│   ├── gateway.ts              # stdio↔SSEゲートウェイ（Claude Desktop用）
+│   └── redis-client.ts
 ├── public/
-│   ├── index.html             # VRMビューア（SSE対応）
-│   ├── models/                # VRMモデル配置（デフォルト）
-│   └── animations/            # glTFアニメーション配置（.glb/.gltf）
+│   ├── models/                 # VRMモデル配置（デフォルト）
+│   ├── animations/             # glTFアニメーション配置（.glb/.gltf）
+│   └── index.html              # VRMビューア
 ├── package.json
 └── README.md
 ```
