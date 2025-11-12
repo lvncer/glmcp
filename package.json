@@ -1,12 +1,12 @@
 {
-  "name": "viewer-mcp",
+  "name": "coeur",
   "version": "0.1.0",
   "description": "glTF Viewer via MCP Protocol - AI-driven model + animation system",
   "type": "module",
   "main": "dist/app/server.js",
   "bin": {
-    "viewer-mcp-server": "./dist/app/server.js",
-    "viewer-mcp-gateway": "./dist/gateway.js"
+    "coeur-mcp-server": "./dist/app/server.js",
+    "coeur-mcp-gateway": "./dist/gateway.js"
   },
   "scripts": {
     "build": "tsc && vite build",
@@ -18,12 +18,10 @@
     "server:dev": "nodemon dist/app/server.js"
   },
   "keywords": [
-    "viewer",
     "mcp",
     "ai",
     "3d",
-    "animation",
-    "claude"
+    "animation"
   ],
   "author": "",
   "license": "MIT",
