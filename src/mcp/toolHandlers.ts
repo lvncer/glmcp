@@ -7,7 +7,10 @@ export const toolHandlers: Record<string, ToolHandler> = {
   animate_vrm_bone: (server, args) => (server as any).animateVRMBone(args),
   get_vrm_status: (server) => (server as any).getVRMStatus(),
   list_vrm_files: (server, args) => (server as any).listVRMFiles(args),
-  load_gltf_animation: (server, args) => (server as any).loadGLTFAnimation(args),
-  play_gltf_animation: (server, args) => (server as any).playGLTFAnimation(args),
-  stop_gltf_animation: (server, args) => (server as any).stopGLTFAnimation(args),
+  load_gltf_animation: (server, args) =>
+    (server as any).loadGLTFAnimation(args),
+  play_gltf_animation: (server, args) =>
+    (server as any).playGLTFAnimation(args),
+  stop_gltf_animation: (server, args) =>
+    (server as any).stopGLTFAnimation(args),
 };

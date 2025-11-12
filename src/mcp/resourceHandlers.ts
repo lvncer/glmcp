@@ -88,11 +88,18 @@ export async function handleResourceRead(server: any, uri: string) {
             { tool: "list_vrm_files", arguments: { type: "animations" } },
             {
               tool: "load_gltf_animation",
-              arguments: { animationPath: "standard.glb", animationName: "standard" },
+              arguments: {
+                animationPath: "standard.glb",
+                animationName: "standard",
+              },
             },
             {
               tool: "play_gltf_animation",
-              arguments: { animationName: "standard", loop: true, fadeInDuration: 0.2 },
+              arguments: {
+                animationName: "standard",
+                loop: true,
+                fadeInDuration: 0.2,
+              },
             },
           ],
         },
@@ -111,7 +118,9 @@ export async function handleResourceRead(server: any, uri: string) {
       sseSessions: server.sseTransports?.size || 0,
       viewerClients: server.viewerSSEClients?.size || 0,
       wsClients: server.connectedClients?.size || 0,
-      redis: server.sessionManager?.isAvailable?.() ? "ENABLED" : "DISABLED (in-memory)",
+      redis: server.sessionManager?.isAvailable?.()
+        ? "ENABLED"
+        : "DISABLED (in-memory)",
     };
     return {
       contents: [{ type: "text", text: JSON.stringify(health, null, 2) }],
@@ -137,7 +146,9 @@ export async function handleResourceRead(server: any, uri: string) {
       total: (server.recentEvents || []).length,
       latest: (server.recentEvents || []).slice(-50),
     };
-    return { contents: [{ type: "text", text: JSON.stringify(logs, null, 2) }] };
+    return {
+      contents: [{ type: "text", text: JSON.stringify(logs, null, 2) }],
+    };
   }
 
   if (uri.startsWith("mcp://vrm/file/")) {
@@ -151,7 +162,10 @@ export async function handleResourceRead(server: any, uri: string) {
       baseDir = server.vrmaAnimationsDir;
       servedPrefix = "/animations/";
     } else {
-      throw new McpError(ErrorCode.InvalidRequest, `Unsupported file type: ${name}`);
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        `Unsupported file type: ${name}`
+      );
     }
     const fullPath = path.join(baseDir, name);
     try {
@@ -162,7 +176,9 @@ export async function handleResourceRead(server: any, uri: string) {
         size: stat.size,
         mtime: stat.mtime.toISOString(),
       };
-      return { contents: [{ type: "text", text: JSON.stringify(info, null, 2) }] };
+      return {
+        contents: [{ type: "text", text: JSON.stringify(info, null, 2) }],
+      };
     } catch {
       throw new McpError(ErrorCode.InvalidRequest, `File not found: ${name}`);
     }
@@ -170,7 +186,9 @@ export async function handleResourceRead(server: any, uri: string) {
 
   if (uri === "mcp://vrm/schema") {
     const schema = { tools: getTools() };
-    return { contents: [{ type: "text", text: JSON.stringify(schema, null, 2) }] };
+    return {
+      contents: [{ type: "text", text: JSON.stringify(schema, null, 2) }],
+    };
   }
 
   throw new McpError(ErrorCode.InvalidRequest, `Unknown resource URI: ${uri}`);
