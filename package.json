@@ -5,17 +5,17 @@
   "type": "module",
   "main": "dist/mcp-server.js",
   "bin": {
-    "vrm-mcp-server": "./dist/mcp-server.js",
+    "vrm-mcp-server": "./dist/app/server.js",
     "vrm-mcp-gateway": "./dist/gateway.js"
   },
   "scripts": {
     "build": "tsc && vite build",
-    "start": "node dist/mcp-server.js",
+    "start": "node dist/app/server.js",
     "gateway": "node dist/gateway.js",
-    "dev": "concurrently \"tsc --watch\" \"vite\" \"nodemon dist/mcp-server.js\"",
+    "dev": "concurrently \"tsc --watch\" \"vite\" \"nodemon dist/app/server.js\"",
     "watch": "tsc --watch",
     "client:dev": "vite",
-    "server:dev": "nodemon dist/mcp-server.js"
+    "server:dev": "nodemon dist/app/server.js"
   },
   "keywords": [
     "vrm",
