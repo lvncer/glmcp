@@ -153,7 +153,7 @@ export class VRMService {
     }
     const summary: string[] = [];
     if (result.models) {
-      summary.push(`📦 VRMモデル (${result.models.length}件):`);
+      summary.push(`📦 モデル (${result.models.length}件):`);
       result.models.forEach((f: string) => summary.push(`  - ${f}`));
     }
     if (result.animations) {

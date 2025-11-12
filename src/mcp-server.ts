@@ -152,7 +152,7 @@ export class VRMMCPServer {
 
     // VRM 状態初期化
     this.vrmState = {
-      modelPath: "lvncer.vrm",
+      modelPath: "standard.glb",
       isLoaded: true,
       expressions: new Map(),
       pose: {
@@ -400,12 +400,9 @@ export class VRMMCPServer {
 
       if (this.vrmState.modelPath) {
         const filePath = `/models/${this.vrmState.modelPath}`;
-        // Send both generic and legacy events for compatibility
+        // Emit generic event only
         res.write(
           `event: load_model\ndata: ${JSON.stringify({ filePath })}\n\n`
-        );
-        res.write(
-          `event: load_vrm_model\ndata: ${JSON.stringify({ filePath })}\n\n`
         );
       }
 

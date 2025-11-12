@@ -4,11 +4,11 @@ import * as path from "path";
 import { getTools } from "./tools.js";
 
 export async function handleResourceRead(server: any, uri: string) {
-  if (uri === "mcp://vrm/capabilities") {
+  if (uri === "mcp://viewer/capabilities") {
     const tools = getTools().map((t) => t.name);
     const payload = {
       server: {
-        name: "vrm-mcp-server",
+        name: "viewer-mcp-server",
         version: "0.1.0",
       },
       endpoints: {
@@ -22,7 +22,7 @@ export async function handleResourceRead(server: any, uri: string) {
     };
   }
 
-  if (uri === "mcp://vrm/status") {
+  if (uri === "mcp://viewer/status") {
     const status = {
       isLoaded: server.vrmState?.isLoaded,
       modelPath: server.vrmState?.modelPath,
@@ -35,11 +35,13 @@ export async function handleResourceRead(server: any, uri: string) {
     };
   }
 
-  if (uri === "mcp://vrm/files") {
+  if (uri === "mcp://viewer/files") {
     const result: any = {};
     try {
       const modelFiles = await fs.readdir(server.vrmModelsDir);
-      result.models = modelFiles.filter((f: string) => f.endsWith(".vrm"));
+      result.models = modelFiles.filter(
+        (f: string) => f.endsWith(".glb") || f.endsWith(".gltf")
+      );
     } catch {
       result.models = [];
     }
@@ -56,51 +58,27 @@ export async function handleResourceRead(server: any, uri: string) {
     };
   }
 
-  if (uri === "mcp://vrm/docs") {
-    const md = `# VRM MCP Docs\n\n## 概要\nVRMモデルの読み込み・制御・アニメーションを提供します。\n\n## 主なツール\n- load_vrm_model(filePath)\n- set_vrm_expression(expression, weight)\n- set_vrm_pose(position?, rotation?)\n- animate_vrm_bone(boneName, rotation)\n- get_vrm_status()\n- list_vrm_files(type?)\n- load_gltf_animation(animationPath, animationName)\n- play_gltf_animation(animationName, loop?, fadeInDuration?)\n- stop_gltf_animation(fadeOutDuration?)\n\n## 典型フロー\n1. list_vrm_files → モデル名確認\n2. load_vrm_model → set_vrm_expression → set_vrm_pose\n3. load_gltf_animation → play_gltf_animation\n`;
+  if (uri === "mcp://viewer/docs") {
+    const md = `# Viewer MCP Docs\n\n## 概要\nR3F + glTF ビューア。モデル(.glb/.gltf)の読み込みと外部アニメ(.glb/.gltf)の適用を提供します。\n\n## 主なツール\n- load_model(filePath)\n- list_assets(type?)\n- load_animation(animationPath, animationName)\n- play_animation(animationName, loop?, fadeInDuration?)\n- stop_animation(fadeOutDuration?)\n\n## 典型フロー\n1. list_assets({ type: \"models\" }) → モデル名確認\n2. load_model({ filePath })\n3. list_assets({ type: \"animations\" })\n4. load_animation({ animationPath, animationName })\n5. play_animation({ animationName, loop: true })\n`;
     return { contents: [{ type: "text", text: md }] };
   }
 
-  if (uri === "mcp://vrm/examples") {
+  if (uri === "mcp://viewer/examples") {
     const examples = {
       examples: [
         {
-          name: "基本ロードと表情・ポーズ",
+          name: "基本: モデル読み込み",
           calls: [
-            { tool: "list_vrm_files", arguments: { type: "models" } },
-            { tool: "load_vrm_model", arguments: { filePath: "lvncer.vrm" } },
-            {
-              tool: "set_vrm_expression",
-              arguments: { expression: "happy", weight: 0.8 },
-            },
-            {
-              tool: "set_vrm_pose",
-              arguments: {
-                position: { x: 0, y: 0, z: 0 },
-                rotation: { x: 0, y: 0, z: 0 },
-              },
-            },
+            { tool: "list_assets", arguments: { type: "models" } },
+            { tool: "load_model", arguments: { filePath: "standard.glb" } },
           ],
         },
         {
           name: "アニメーション再生",
           calls: [
-            { tool: "list_vrm_files", arguments: { type: "animations" } },
-            {
-              tool: "load_gltf_animation",
-              arguments: {
-                animationPath: "standard.glb",
-                animationName: "standard",
-              },
-            },
-            {
-              tool: "play_gltf_animation",
-              arguments: {
-                animationName: "standard",
-                loop: true,
-                fadeInDuration: 0.2,
-              },
-            },
+            { tool: "list_assets", arguments: { type: "animations" } },
+            { tool: "load_animation", arguments: { animationPath: "standard.glb", animationName: "standard" } },
+            { tool: "play_animation", arguments: { animationName: "standard", loop: true, fadeInDuration: 0.2 } },
           ],
         },
       ],
@@ -110,7 +88,7 @@ export async function handleResourceRead(server: any, uri: string) {
     };
   }
 
-  if (uri === "mcp://vrm/health") {
+  if (uri === "mcp://viewer/health") {
     const health = {
       version: "0.1.0",
       startedAt: new Date(server.serverStartTime).toISOString(),
@@ -127,7 +105,7 @@ export async function handleResourceRead(server: any, uri: string) {
     };
   }
 
-  if (uri === "mcp://vrm/session") {
+  if (uri === "mcp://viewer/session") {
     const session = {
       sseSessionIds: Array.from(server.sseTransports?.keys?.() || []),
       totals: {
@@ -141,7 +119,7 @@ export async function handleResourceRead(server: any, uri: string) {
     };
   }
 
-  if (uri === "mcp://vrm/logs") {
+  if (uri === "mcp://viewer/logs") {
     const logs = {
       total: (server.recentEvents || []).length,
       latest: (server.recentEvents || []).slice(-50),
@@ -151,40 +129,33 @@ export async function handleResourceRead(server: any, uri: string) {
     };
   }
 
-  if (uri.startsWith("mcp://vrm/file/")) {
-    const name = uri.substring("mcp://vrm/file/".length);
-    let baseDir = "";
-    let servedPrefix = "";
-    if (name.endsWith(".vrm")) {
-      baseDir = server.vrmModelsDir;
-      servedPrefix = "/models/";
-    } else if (name.endsWith(".glb") || name.endsWith(".gltf")) {
-      baseDir = server.vrmaAnimationsDir;
-      servedPrefix = "/animations/";
-    } else {
-      throw new McpError(
-        ErrorCode.InvalidRequest,
-        `Unsupported file type: ${name}`
-      );
+  if (uri.startsWith("mcp://viewer/file/")) {
+    const name = uri.substring("mcp://viewer/file/".length);
+    if (!(name.endsWith(".glb") || name.endsWith(".gltf"))) {
+      throw new McpError(ErrorCode.InvalidRequest, `Unsupported file type: ${name}`);
     }
-    const fullPath = path.join(baseDir, name);
-    try {
-      const stat = await fs.stat(fullPath);
-      const info = {
-        name,
-        path: `${servedPrefix}${name}`,
-        size: stat.size,
-        mtime: stat.mtime.toISOString(),
-      };
-      return {
-        contents: [{ type: "text", text: JSON.stringify(info, null, 2) }],
-      };
-    } catch {
-      throw new McpError(ErrorCode.InvalidRequest, `File not found: ${name}`);
+    // Search models first, then animations
+    const candidates: Array<{ baseDir: string; servedPrefix: string }> = [
+      { baseDir: server.vrmModelsDir, servedPrefix: "/models/" },
+      { baseDir: server.vrmaAnimationsDir, servedPrefix: "/animations/" },
+    ];
+    for (const c of candidates) {
+      const fullPath = path.join(c.baseDir, name);
+      try {
+        const stat = await fs.stat(fullPath);
+        const info = {
+          name,
+          path: `${c.servedPrefix}${name}`,
+          size: stat.size,
+          mtime: stat.mtime.toISOString(),
+        };
+        return { contents: [{ type: "text", text: JSON.stringify(info, null, 2) }] };
+      } catch {}
     }
+    throw new McpError(ErrorCode.InvalidRequest, `File not found: ${name}`);
   }
 
-  if (uri === "mcp://vrm/schema") {
+  if (uri === "mcp://viewer/schema") {
     const schema = { tools: getTools() };
     return {
       contents: [{ type: "text", text: JSON.stringify(schema, null, 2) }],
