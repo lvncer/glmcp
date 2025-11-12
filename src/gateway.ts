@@ -44,6 +44,7 @@ class MCPGateway {
       {
         capabilities: {
           tools: {},
+          resources: {},
         },
       }
     );
