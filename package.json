@@ -1,12 +1,12 @@
 {
-  "name": "vrm-mcp",
+  "name": "viewer-mcp",
   "version": "0.1.0",
-  "description": "VRM Model Control via MCP Protocol - AI-driven VRM animation system",
+  "description": "glTF Viewer via MCP Protocol - AI-driven model + animation system",
   "type": "module",
-  "main": "dist/mcp-server.js",
+  "main": "dist/app/server.js",
   "bin": {
-    "vrm-mcp-server": "./dist/app/server.js",
-    "vrm-mcp-gateway": "./dist/gateway.js"
+    "viewer-mcp-server": "./dist/app/server.js",
+    "viewer-mcp-gateway": "./dist/gateway.js"
   },
   "scripts": {
     "build": "tsc && vite build",
@@ -18,7 +18,7 @@
     "server:dev": "nodemon dist/app/server.js"
   },
   "keywords": [
-    "vrm",
+    "viewer",
     "mcp",
     "ai",
     "3d",

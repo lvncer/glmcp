@@ -8,13 +8,13 @@
 
 | 環境変数              | 説明                                      | デフォルト値          |
 | --------------------- | ----------------------------------------- | --------------------- |
-| `VRM_MODELS_DIR`      | VRM モデルファイルのディレクトリ          | `./public/models`     |
-| `VRMA_ANIMATIONS_DIR` | VRMA アニメーションファイルのディレクトリ | `./public/animations` |
+| `MODELS_DIR`          | モデルファイルのディレクトリ              | `./public/models`     |
+| `ANIMATIONS_DIR`      | アニメーションファイルのディレクトリ      | `./public/animations` |
 | `VIEWER_PORT`         | Web ビューアのポート番号                  | `3000`                |
 
-## 1. VRM/VRMA ファイルを準備
+## 1. モデル/アニメーションファイルを準備
 
-VRM モデルと VRMA アニメーションファイルを用意してください。
+glTF/GLB モデルとアニメーション（.glb/.gltf）ファイルを用意してください。
 
 ## 2. ファイル配置
 
@@ -22,12 +22,12 @@ VRM モデルと VRMA アニメーションファイルを用意してくださ�
 
 ```bash
 # 1. 好きな場所にディレクトリ作成
-mkdir -p ~/vrm/models
-mkdir -p ~/vrm/animations
+mkdir -p ~/assets/models
+mkdir -p ~/assets/animations
 
 # 2. ファイルを配置
-cp /path/to/your-character.vrm ~/vrm/models/
-cp /path/to/your-animation.vrma ~/vrm/animations/
+cp /path/to/your-model.glb ~/assets/models/
+cp /path/to/your-animation.glb ~/assets/animations/
 
 # 3. Claude Desktop設定ファイルを編集
 nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
@@ -38,12 +38,12 @@ nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
 ```json
 {
   "mcpServers": {
-    "vrm-control": {
+    "viewer-control": {
       "command": "node",
-      "args": ["/path/to/your-project/vrm-mcp/dist/mcp-server.js"],
+      "args": ["/path/to/your-project/dist/app/server.js"],
       "env": {
-        "VRM_MODELS_DIR": "/User/your-name/vrm/models",
-        "VRMA_ANIMATIONS_DIR": "/Users/your-name/vrm/animations",
+        "MODELS_DIR": "/Users/your-name/assets/models",
+        "ANIMATIONS_DIR": "/Users/your-name/assets/animations",
         "VIEWER_PORT": "3000"
       }
     }
@@ -54,11 +54,11 @@ nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
 ### オプション B: プロジェクト内に配置（シンプル）
 
 ```bash
-# VRMファイルを配置
-cp /path/to/your-character.vrm /path/to/your-project/vrm-mcp/public/models/
+# モデルファイルを配置
+cp /path/to/your-model.glb /path/to/your-project/public/models/
 
-# VRMAファイルを配置
-cp /path/to/your-animation.vrma /path/to/your-project/vrm-mcp/public/animations/
+# アニメーションファイルを配置
+cp /path/to/your-animation.glb /path/to/your-project/public/animations/
 ```
 
 `claude_desktop_config.json`:
@@ -66,9 +66,9 @@ cp /path/to/your-animation.vrma /path/to/your-project/vrm-mcp/public/animations/
 ```json
 {
   "mcpServers": {
-    "vrm-control": {
+    "viewer-control": {
       "command": "node",
-      "args": ["/path/to/your-project/vrm-mcp/dist/mcp-server.js"]
+      "args": ["/path/to/your-project/dist/app/server.js"]
     }
   }
 }
@@ -81,20 +81,16 @@ cp /path/to/your-animation.vrma /path/to/your-project/vrm-mcp/public/animations/
 3. **Claude Desktop で試す**:
 
 ```text
-あなた: どんなVRMモデルがある？
+あなた: どんなモデルがある？
 
-Claude: 📦 VRMモデル (1件):
-  - character.vrm
-🎬 VRMAアニメーション (1件):
-  - greeting.vrma
+Claude: 📦 モデル (1件):
+  - standard.glb
+🎬 glTFアニメーション (1件):
+  - CesiumMan.glb
 
-あなた: character.vrm を読み込んで
+あなた: standard.glb を読み込んで
 
-Claude: ✓ VRMモデルを読み込みました: character.vrm
-
-あなた: 嬉しい表情にして
-
-Claude: ✓ 表情 "happy" を強さ 1.0 で設定しました
+Claude: ✓ モデルを読み込みました: standard.glb
 ```
 
 ## 動作確認
@@ -118,12 +114,12 @@ node    12345  user   21u  IPv6  0x...      0t0  TCP *:3000 (LISTEN)
 ### Web ビューアにアクセス
 
 1. ブラウザで [http://localhost:3000](http://localhost:3000) を開く
-2. 「VRM Viewer (VRMA 対応)」と表示される
+2. 「glTF Viewer (R3F)」と表示される
 3. Status: Connected（緑色の点）になっていれば OK
 
 ## 完成
 
-セットアップが完了したら、AI に話しかけるだけで VRM が動きます！
+セットアップが完了したら、AI に話しかけるだけで モデル が動きます！
 
 **例**:
 

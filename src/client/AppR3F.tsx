@@ -165,10 +165,6 @@ function Scene(props: {
     es.addEventListener("load_animation", onLoadAnimation as any);
     es.addEventListener("play_animation", onPlayAnimation as any);
     es.addEventListener("stop_animation", onStopAnimation as any);
-    es.addEventListener("load_vrm_model", onLoadModel as any);
-    es.addEventListener("load_gltf_animation", onLoadAnimation as any);
-    es.addEventListener("play_gltf_animation", onPlayAnimation as any);
-    es.addEventListener("stop_gltf_animation", onStopAnimation as any);
 
     return () => {
       es.removeEventListener("init", onInit as any);
@@ -176,10 +172,6 @@ function Scene(props: {
       es.removeEventListener("load_animation", onLoadAnimation as any);
       es.removeEventListener("play_animation", onPlayAnimation as any);
       es.removeEventListener("stop_animation", onStopAnimation as any);
-      es.removeEventListener("load_vrm_model", onLoadModel as any);
-      es.removeEventListener("load_gltf_animation", onLoadAnimation as any);
-      es.removeEventListener("play_gltf_animation", onPlayAnimation as any);
-      es.removeEventListener("stop_gltf_animation", onStopAnimation as any);
       es.close();
     };
   }, []);

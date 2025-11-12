@@ -101,9 +101,12 @@ export class ViewerMCPServer {
   constructor() {
     // 環境変数またはデフォルトパス
     this.modelsDir =
-      process.env.VRM_MODELS_DIR || path.join(__dirname, "../public/models");
+      process.env.MODELS_DIR ||
+      process.env.VRM_MODELS_DIR ||
+      path.join(__dirname, "../public/models");
 
     this.animationsDir =
+      process.env.ANIMATIONS_DIR ||
       process.env.VRMA_ANIMATIONS_DIR ||
       path.join(__dirname, "../public/animations");
 
@@ -132,7 +135,7 @@ export class ViewerMCPServer {
     // MCP サーバー初期化
     this.mcpServer = new Server(
       {
-        name: "vrm-mcp-server",
+        name: "viewer-mcp-server",
         version: "0.1.0",
       },
       {

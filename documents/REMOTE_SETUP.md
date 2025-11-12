@@ -1,6 +1,6 @@
 # リモート MCP サーバー セットアップガイド
 
-このガイドでは、VRM MCP サーバーを Railway にデプロイし、リモートからアクセスする方法を説明します。
+このガイドでは、Viewer MCP サーバーを Railway にデプロイし、リモートからアクセスする方法を説明します。
 
 ## 概要
 
@@ -8,7 +8,7 @@
 
 - ✅ ローカル環境に環境変数を設定する必要がない
 - ✅ 複数のクライアント（Claude Desktop、Cursor 等）から同じサーバーにアクセス可能
-- ✅ VRM モデルとアニメーションを一元管理
+- ✅ モデルとアニメーションを一元管理
 - ✅ チーム内で共有可能
 - ✅ **Redis セッション管理**で複数インスタンス対応
 
@@ -48,7 +48,7 @@
 
 | 環境変数         | 説明                      | 例                                           |
 | ---------------- | ------------------------- | -------------------------------------------- |
-| `MCP_REMOTE_URL` | リモート MCP サーバー URL | `https://vrm-mcp-xxx.vercel.app/api/mcp/sse` |
+| `MCP_REMOTE_URL` | リモート MCP サーバー URL | `https://viewer-mcp-xxx.vercel.app/api/mcp/sse` |
 | `MCP_API_KEY`    | API キー                  | `your-secret-key`                            |
 
 ## 0. 事前準備：Redis（Upstash）のセットアップ
@@ -80,7 +80,7 @@ npm install -g @railway/cli
 railway login
 
 # プロジェクトをデプロイ
-cd /path/to/vrm-mcp
+cd /path/to/your-project
 railway init
 railway up
 ```
@@ -102,7 +102,7 @@ UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
 UPSTASH_REDIS_REST_TOKEN=AXXXyyyyyzzzzz==
 
 # オプション
-ALLOWED_ORIGINS=https://vrmcp.up.railway.app
+ALLOWED_ORIGINS=https://viewer-mcp.up.railway.app
 PORT=3000
 ```
 
@@ -111,7 +111,7 @@ PORT=3000
 Settings → Deploy → **Start Command**:
 
 ```bash
-node dist/mcp-server.js
+node dist/app/server.js
 ```
 
 Build Command（自動検出されるはず）:
@@ -124,12 +124,12 @@ npm install && npm run build
 
 デプロイが完了すると、URL が表示されます：
 
-[https://vrmcp.up.railway.app](https://vrmcp.up.railway.app)
+[https://viewer-mcp.up.railway.app](https://viewer-mcp.up.railway.app)
 
 ### 1.6 環境変数の設定
 
 - `MCP_API_KEY`: `your-super-secret-key-12345`
-- `ALLOWED_ORIGINS`: `https://vrmcp.up.railway.app`
+- `ALLOWED_ORIGINS`: `https://viewer-mcp.up.railway.app`
 
 ## 2. クライアント設定
 
@@ -140,7 +140,7 @@ npm install && npm run build
 #### ステップ 1: 依存関係のインストール
 
 ```bash
-cd /path/to/vrm-mcp
+cd /path/to/your-project
 npm install
 npm run build
 ```
@@ -149,7 +149,7 @@ npm run build
 
 ```bash
 # ~/.zshrc または ~/.bashrc に追加
-export MCP_REMOTE_URL="https://vrmcp.up.railway.app/api/mcp/sse"
+export MCP_REMOTE_URL="https://viewer-mcp.up.railway.app/api/mcp/sse"
 export MCP_API_KEY="your-super-secret-key-12345"
 ```
 
@@ -166,11 +166,11 @@ source ~/.zshrc
 ```json
 {
   "mcpServers": {
-    "vrm-remote": {
+    "viewer-remote": {
       "command": "node",
-      "args": ["/path/to/vrm-mcp/dist/gateway.js"],
+      "args": ["/path/to/your-project/dist/gateway.js"],
       "env": {
-        "MCP_REMOTE_URL": "https://vrmcp.up.railway.app/api/mcp/sse",
+        "MCP_REMOTE_URL": "https://viewer-mcp.up.railway.app/api/mcp/sse",
         "MCP_API_KEY": "your-super-secret-key-12345"
       }
     }
@@ -189,8 +189,8 @@ Cursor から直接 SSE 接続する場合の設定例：
 ```json
 {
   "mcpServers": {
-    "vrm-remote": {
-      "url": "https://vrmcp.up.railway.app/api/mcp/sse",
+    "viewer-remote": {
+      "url": "https://viewer-mcp.up.railway.app/api/mcp/sse",
       "headers": {
         "x-api-key": "your-super-secret-key-12345"
       }
@@ -203,9 +203,9 @@ Cursor から直接 SSE 接続する場合の設定例：
 
 デプロイされたサーバーでは、静的ファイルも配信されます：
 
-[https://vrmcp.up.railway.app/](https://vrmcp.up.railway.app/)
+[https://viewer-mcp.up.railway.app/](https://viewer-mcp.up.railway.app/)
 
-ブラウザでアクセスすると、VRM ビューアが表示されます。SSE 経由でリアルタイムに更新されます。
+ブラウザでアクセスすると、glTF ビューアが表示されます。SSE 経由でリアルタイムに更新されます。
 
 ## 4. 動作確認
 
@@ -219,8 +219,8 @@ npm run gateway
 以下のような出力が表示されれば OK：
 
 ```sh
-🌉 VRM MCP Gateway starting...
-📡 Remote URL: https://vrmcp.up.railway.app/api/mcp/sse
+🌉 Viewer MCP Gateway starting...
+📡 Remote URL: https://viewer-mcp.up.railway.app/api/mcp/sse
 ✓ Connected to remote MCP server
 ✓ Gateway ready (stdio ⇄ SSE)
 ```
@@ -230,7 +230,7 @@ npm run gateway
 Claude Desktop で以下を試してみてください：
 
 ```text
-あなた: どんなVRMモデルがある？
+あなた: どんなモデルがある？
 
 Claude: [リモートサーバーからツール一覧を取得して応答]
 ```
@@ -255,10 +255,10 @@ openssl rand -base64 32
 
 ```bash
 # 本番環境
-ALLOWED_ORIGINS=https://vrmcp.up.railway.app
+ALLOWED_ORIGINS=https://viewer-mcp.up.railway.app
 
 # 開発環境も含める場合
-ALLOWED_ORIGINS=https://vrmcp.up.railway.app,http://localhost:3000
+ALLOWED_ORIGINS=https://viewer-mcp.up.railway.app,http://localhost:3000
 ```
 
 ### 5.3 レート制限
@@ -285,15 +285,15 @@ open http://localhost:3000
 ```json
 {
   "mcpServers": {
-    "vrm-local": {
+    "viewer-local": {
       "command": "node",
-      "args": ["/path/to/vrm-mcp/dist/mcp-server.js"]
+      "args": ["/path/to/your-project/dist/app/server.js"]
     },
-    "vrm-remote": {
+    "viewer-remote": {
       "command": "node",
-      "args": ["/path/to/vrm-mcp/dist/gateway.js"],
+      "args": ["/path/to/your-project/dist/gateway.js"],
       "env": {
-        "MCP_REMOTE_URL": "https://vrmcp.up.railway.app/api/mcp/sse",
+        "MCP_REMOTE_URL": "https://viewer-mcp.up.railway.app/api/mcp/sse",
         "MCP_API_KEY": "your-key"
       }
     }

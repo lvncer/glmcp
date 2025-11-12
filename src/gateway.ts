@@ -21,7 +21,7 @@ class MCPGateway {
     // ローカル側: Claude DesktopとStdio通信
     this.server = new Server(
       {
-        name: "vrm-mcp-gateway",
+        name: "viewer-mcp-gateway",
         version: "0.1.0",
       },
       {
@@ -35,7 +35,7 @@ class MCPGateway {
     // リモート側: SSEクライアント
     this.client = new Client(
       {
-        name: "vrm-mcp-gateway-client",
+        name: "viewer-mcp-gateway-client",
         version: "0.1.0",
       },
       {
@@ -110,7 +110,7 @@ class MCPGateway {
   }
 
   async start(): Promise<void> {
-    console.error("🌉 VRM MCP Gateway starting...");
+    console.error("🌉 Viewer MCP Gateway starting...");
     console.error(`📡 Remote URL: ${REMOTE_URL}`);
 
     try {

@@ -9,7 +9,7 @@ export function getTools() {
           filePath: {
             type: "string",
             description:
-              "モデルファイル名（例: model.glb）環境変数 VRM_MODELS_DIR からの相対パス",
+              "モデルファイル名（例: model.glb）環境変数 MODELS_DIR からの相対パス",
           },
         },
         required: ["filePath"],
@@ -39,7 +39,7 @@ export function getTools() {
           animationPath: {
             type: "string",
             description:
-              "glTFファイル名（例: walk.glb）環境変数 VRMA_ANIMATIONS_DIR からの相対パス",
+              "glTFファイル名（例: walk.glb）環境変数 ANIMATIONS_DIR からの相対パス",
           },
           animationName: {
             type: "string",
