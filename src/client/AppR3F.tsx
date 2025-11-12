@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Environment } from "@react-three/drei";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 function Scene(props: {
-  onStatus: (s: 'connecting' | 'connected' | 'disconnected') => void;
+  onStatus: (s: "connecting" | "connected" | "disconnected") => void;
   onModel: (name: string) => void;
   onAnimation: (name: string) => void;
 }) {
@@ -22,8 +22,10 @@ function Scene(props: {
   function makeLoader(): GLTFLoader {
     const loader = new GLTFLoader();
     const draco = new DRACOLoader();
-    draco.setDecoderConfig({ type: 'wasm' });
-    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+    draco.setDecoderConfig({ type: "wasm" });
+    draco.setDecoderPath(
+      "https://www.gstatic.com/draco/versioned/decoders/1.5.7/"
+    );
     loader.setDRACOLoader(draco);
     return loader;
   }
@@ -40,7 +42,7 @@ function Scene(props: {
       }
 
       const scene = (gltf as any).scene as THREE.Object3D | undefined;
-      if (!scene) throw new Error('glTF scene not found');
+      if (!scene) throw new Error("glTF scene not found");
       rootRef.current.add(scene);
 
       mixerRef.current = new THREE.AnimationMixer(scene);
@@ -50,11 +52,11 @@ function Scene(props: {
         currentActionRef.current = null;
       }
 
-      const name = String(filePath).split('/').pop() || 'Loaded';
+      const name = String(filePath).split("/").pop() || "Loaded";
       props.onModel(name);
     } catch (e) {
-      console.error('Failed to load model:', e);
-      props.onStatus('disconnected');
+      console.error("Failed to load model:", e);
+      props.onStatus("disconnected");
     }
   }
 
@@ -66,14 +68,17 @@ function Scene(props: {
       if (clips.length > 0) {
         loadedClipsRef.current.set(animationName, clips[0]);
       } else {
-        console.warn('No animations found in glTF:', animationPath);
+        console.warn("No animations found in glTF:", animationPath);
       }
     } catch (e) {
-      console.error('Failed to load glTF animation:', e);
+      console.error("Failed to load glTF animation:", e);
     }
   }
 
-  function playAnimation(animationName: string, opts?: { loop?: boolean; fadeInDuration?: number }) {
+  function playAnimation(
+    animationName: string,
+    opts?: { loop?: boolean; fadeInDuration?: number }
+  ) {
     const group = rootRef.current;
     const mixer = mixerRef.current;
     if (!group || !mixer) return;
@@ -83,14 +88,18 @@ function Scene(props: {
       const clip = loadedClipsRef.current.get(animationName);
       if (!clip) {
         if (tries-- > 0) return void setTimeout(attempt, 200);
-        console.warn('Animation not loaded:', animationName);
+        console.warn("Animation not loaded:", animationName);
         return;
       }
       const next = mixer.clipAction(clip, group);
       next.reset();
-      next.setLoop(opts?.loop ? THREE.LoopRepeat : THREE.LoopOnce, opts?.loop ? Infinity : 1);
+      next.setLoop(
+        opts?.loop ? THREE.LoopRepeat : THREE.LoopOnce,
+        opts?.loop ? Infinity : 1
+      );
       next.clampWhenFinished = true;
-      const fadeIn = typeof opts?.fadeInDuration === 'number' ? opts.fadeInDuration! : 0.3;
+      const fadeIn =
+        typeof opts?.fadeInDuration === "number" ? opts.fadeInDuration! : 0.3;
       if (currentActionRef.current && currentActionRef.current !== next) {
         currentActionRef.current.fadeOut(fadeIn);
       }
@@ -102,22 +111,22 @@ function Scene(props: {
   }
 
   function stopAnimation(fadeOutDuration?: number) {
-    const fadeOut = typeof fadeOutDuration === 'number' ? fadeOutDuration : 0.3;
+    const fadeOut = typeof fadeOutDuration === "number" ? fadeOutDuration : 0.3;
     if (currentActionRef.current) {
       const toStop = currentActionRef.current;
       toStop.fadeOut(fadeOut);
       setTimeout(() => toStop.stop(), Math.max(0, fadeOut) * 1000 + 50);
       currentActionRef.current = null;
-      props.onAnimation('None');
+      props.onAnimation("None");
     }
   }
 
   useEffect(() => {
-    const es = new EventSource('/api/viewer/sse');
-    props.onStatus('connecting');
+    const es = new EventSource("/api/viewer/sse");
+    props.onStatus("connecting");
 
-    es.onopen = () => props.onStatus('connected');
-    es.onerror = () => props.onStatus('disconnected');
+    es.onopen = () => props.onStatus("connected");
+    es.onerror = () => props.onStatus("disconnected");
 
     const onInit = (event: MessageEvent) => {
       try {
@@ -128,8 +137,8 @@ function Scene(props: {
     const onLoadModel = (event: MessageEvent) => {
       const data = JSON.parse(event.data);
       const filePath: string = data.filePath;
-      if (typeof filePath !== 'string') return;
-      if (filePath.endsWith('.vrm')) return; // ignore legacy
+      if (typeof filePath !== "string") return;
+      if (filePath.endsWith(".vrm")) return; // ignore legacy
       loadModel(filePath);
     };
 
@@ -140,7 +149,10 @@ function Scene(props: {
 
     const onPlayAnimation = (event: MessageEvent) => {
       const data = JSON.parse(event.data);
-      playAnimation(data.animationName, { loop: data.loop, fadeInDuration: data.fadeInDuration });
+      playAnimation(data.animationName, {
+        loop: data.loop,
+        fadeInDuration: data.fadeInDuration,
+      });
     };
 
     const onStopAnimation = (event: MessageEvent) => {
@@ -148,26 +160,26 @@ function Scene(props: {
       stopAnimation(data.fadeOutDuration);
     };
 
-    es.addEventListener('init', onInit as any);
-    es.addEventListener('load_model', onLoadModel as any);
-    es.addEventListener('load_animation', onLoadAnimation as any);
-    es.addEventListener('play_animation', onPlayAnimation as any);
-    es.addEventListener('stop_animation', onStopAnimation as any);
-    es.addEventListener('load_vrm_model', onLoadModel as any);
-    es.addEventListener('load_gltf_animation', onLoadAnimation as any);
-    es.addEventListener('play_gltf_animation', onPlayAnimation as any);
-    es.addEventListener('stop_gltf_animation', onStopAnimation as any);
+    es.addEventListener("init", onInit as any);
+    es.addEventListener("load_model", onLoadModel as any);
+    es.addEventListener("load_animation", onLoadAnimation as any);
+    es.addEventListener("play_animation", onPlayAnimation as any);
+    es.addEventListener("stop_animation", onStopAnimation as any);
+    es.addEventListener("load_vrm_model", onLoadModel as any);
+    es.addEventListener("load_gltf_animation", onLoadAnimation as any);
+    es.addEventListener("play_gltf_animation", onPlayAnimation as any);
+    es.addEventListener("stop_gltf_animation", onStopAnimation as any);
 
     return () => {
-      es.removeEventListener('init', onInit as any);
-      es.removeEventListener('load_model', onLoadModel as any);
-      es.removeEventListener('load_animation', onLoadAnimation as any);
-      es.removeEventListener('play_animation', onPlayAnimation as any);
-      es.removeEventListener('stop_animation', onStopAnimation as any);
-      es.removeEventListener('load_vrm_model', onLoadModel as any);
-      es.removeEventListener('load_gltf_animation', onLoadAnimation as any);
-      es.removeEventListener('play_gltf_animation', onPlayAnimation as any);
-      es.removeEventListener('stop_gltf_animation', onStopAnimation as any);
+      es.removeEventListener("init", onInit as any);
+      es.removeEventListener("load_model", onLoadModel as any);
+      es.removeEventListener("load_animation", onLoadAnimation as any);
+      es.removeEventListener("play_animation", onPlayAnimation as any);
+      es.removeEventListener("stop_animation", onStopAnimation as any);
+      es.removeEventListener("load_vrm_model", onLoadModel as any);
+      es.removeEventListener("load_gltf_animation", onLoadAnimation as any);
+      es.removeEventListener("play_gltf_animation", onPlayAnimation as any);
+      es.removeEventListener("stop_gltf_animation", onStopAnimation as any);
       es.close();
     };
   }, []);
@@ -186,19 +198,55 @@ function Scene(props: {
 }
 
 export function App() {
-  const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
-  const [modelName, setModelName] = useState<string>('Not loaded');
-  const [animationName, setAnimationName] = useState<string>('None');
+  const [status, setStatus] = useState<
+    "connecting" | "connected" | "disconnected"
+  >("connecting");
+  const [modelName, setModelName] = useState<string>("Not loaded");
+  const [animationName, setAnimationName] = useState<string>("None");
 
   return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#1a1a1a' }}>
+    <div
+      style={{
+        width: "100vw",
+        height: "100vh",
+        overflow: "hidden",
+        background: "#1a1a1a",
+      }}
+    >
       <Canvas camera={{ position: [0, 1.5, 5], fov: 50 }}>
-        <Scene onStatus={setStatus} onModel={setModelName} onAnimation={setAnimationName} />
+        <Scene
+          onStatus={setStatus}
+          onModel={setModelName}
+          onAnimation={setAnimationName}
+        />
       </Canvas>
-      <div style={{ position: 'absolute', top: 20, left: 20, color: '#fff', background: 'rgba(0,0,0,.8)', padding: '12px 16px', borderRadius: 8, fontFamily: 'monospace', fontSize: 13 }}>
-        <div style={{ marginBottom: 8, color: '#00d4ff', fontWeight: 700 }}>glTF Viewer (R3F)</div>
+      <div
+        style={{
+          position: "absolute",
+          top: 20,
+          left: 20,
+          color: "#fff",
+          background: "rgba(0,0,0,.8)",
+          padding: "12px 16px",
+          borderRadius: 8,
+          fontFamily: "monospace",
+          fontSize: 13,
+        }}
+      >
+        <div style={{ marginBottom: 8, color: "#00d4ff", fontWeight: 700 }}>
+          glTF Viewer (R3F)
+        </div>
         <div style={{ marginBottom: 4 }}>
-          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginRight: 8, background: status === 'connected' ? '#0f0' : '#f00' }} />
+          <span
+            style={{
+              display: "inline-block",
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              marginRight: 8,
+              background: status === "connected" ? "#0f0" : "#f00",
+            }}
+          />
           <strong>Status:</strong> {status}
         </div>
         <div style={{ marginBottom: 4 }}>

@@ -75,8 +75,21 @@ export async function handleResourceRead(server: any, uri: string) {
           name: "アニメーション再生",
           calls: [
             { tool: "list_assets", arguments: { type: "animations" } },
-            { tool: "load_animation", arguments: { animationPath: "CesiumMan.glb", animationName: "cesium" } },
-            { tool: "play_animation", arguments: { animationName: "cesium", loop: true, fadeInDuration: 0.2 } },
+            {
+              tool: "load_animation",
+              arguments: {
+                animationPath: "CesiumMan.glb",
+                animationName: "cesium",
+              },
+            },
+            {
+              tool: "play_animation",
+              arguments: {
+                animationName: "cesium",
+                loop: true,
+                fadeInDuration: 0.2,
+              },
+            },
           ],
         },
       ],
@@ -130,7 +143,10 @@ export async function handleResourceRead(server: any, uri: string) {
   if (uri.startsWith("mcp://viewer/file/")) {
     const name = uri.substring("mcp://viewer/file/".length);
     if (!(name.endsWith(".glb") || name.endsWith(".gltf"))) {
-      throw new McpError(ErrorCode.InvalidRequest, `Unsupported file type: ${name}`);
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        `Unsupported file type: ${name}`
+      );
     }
     // Search models first, then animations
     const candidates: Array<{ baseDir: string; servedPrefix: string }> = [
@@ -147,7 +163,9 @@ export async function handleResourceRead(server: any, uri: string) {
           size: stat.size,
           mtime: stat.mtime.toISOString(),
         };
-        return { contents: [{ type: "text", text: JSON.stringify(info, null, 2) }] };
+        return {
+          contents: [{ type: "text", text: JSON.stringify(info, null, 2) }],
+        };
       } catch {}
     }
     throw new McpError(ErrorCode.InvalidRequest, `File not found: ${name}`);

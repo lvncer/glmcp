@@ -30,7 +30,10 @@ export class ModelService {
       await fs.access(fullPath);
       this.state.modelPath = filePath;
       this.state.isLoaded = true;
-      this.broadcast({ type: "load_model", data: { filePath: `/models/${filePath}` } });
+      this.broadcast({
+        type: "load_model",
+        data: { filePath: `/models/${filePath}` },
+      });
       this.logEvent("load_model", { filePath });
       return {
         content: [
@@ -93,7 +96,10 @@ export class ModelService {
       if (!this.state.loadedAnimations.includes(animationName)) {
         this.state.loadedAnimations.push(animationName);
       }
-      this.broadcast({ type: "load_animation", data: { animationPath: `/animations/${animationPath}`, animationName } });
+      this.broadcast({
+        type: "load_animation",
+        data: { animationPath: `/animations/${animationPath}`, animationName },
+      });
       this.logEvent("load_animation", { animationName, animationPath });
       return {
         content: [
@@ -104,17 +110,26 @@ export class ModelService {
         ],
       };
     } catch {
-      throw new Error(`アニメーションの読み込みに失敗しました: ${animationPath}`);
+      throw new Error(
+        `アニメーションの読み込みに失敗しました: ${animationPath}`
+      );
     }
   }
 
-  async playAnimation(args: { animationName: string; loop?: boolean; fadeInDuration?: number }) {
+  async playAnimation(args: {
+    animationName: string;
+    loop?: boolean;
+    fadeInDuration?: number;
+  }) {
     const { animationName, loop, fadeInDuration } = args;
     if (!this.state.isLoaded) throw new Error("モデルが読み込まれていません");
     if (!this.state.loadedAnimations.includes(animationName)) {
       throw new Error(`アニメーションが未ロードです: ${animationName}`);
     }
-    this.broadcast({ type: "play_animation", data: { animationName, loop, fadeInDuration } });
+    this.broadcast({
+      type: "play_animation",
+      data: { animationName, loop, fadeInDuration },
+    });
     this.logEvent("play_animation", {
       animationName,
       loop,

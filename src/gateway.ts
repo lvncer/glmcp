@@ -9,7 +9,8 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
-const REMOTE_URL = process.env.MCP_REMOTE_URL || "http://localhost:3000/api/mcp/sse";
+const REMOTE_URL =
+  process.env.MCP_REMOTE_URL || "http://localhost:3000/api/mcp/sse";
 const API_KEY = process.env.MCP_API_KEY;
 
 class MCPGateway {
@@ -47,21 +48,17 @@ class MCPGateway {
 
   private setupBridge(): void {
     // Claude Desktopからのツール一覧リクエストをリモートに転送
-    this.server.setRequestHandler(
-      { method: "tools/list" } as any,
-      async () => {
-        try {
-          const result = await this.client.request(
-            { method: "tools/list" },
-            { method: "tools/list" } as any
-          );
-          return result;
-        } catch (error) {
-          console.error("Failed to list tools from remote:", error);
-          return { tools: [] };
-        }
+    this.server.setRequestHandler({ method: "tools/list" } as any, async () => {
+      try {
+        const result = await this.client.request({ method: "tools/list" }, {
+          method: "tools/list",
+        } as any);
+        return result;
+      } catch (error) {
+        console.error("Failed to list tools from remote:", error);
+        return { tools: [] };
       }
-    );
+    });
 
     // Claude Desktopからのツール実行リクエストをリモートに転送
     this.server.setRequestHandler(
@@ -81,21 +78,18 @@ class MCPGateway {
     );
 
     // Resources: list をブリッジ
-    this.server.setRequestHandler(
-      ListResourcesRequestSchema,
-      async () => {
-        try {
-          const result = await this.client.request(
-            { method: "resources/list" } as any,
-            ListResourcesRequestSchema
-          );
-          return result;
-        } catch (error) {
-          console.error("Failed to list resources from remote:", error);
-          return { resources: [] };
-        }
+    this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
+      try {
+        const result = await this.client.request(
+          { method: "resources/list" } as any,
+          ListResourcesRequestSchema
+        );
+        return result;
+      } catch (error) {
+        console.error("Failed to list resources from remote:", error);
+        return { resources: [] };
       }
-    );
+    });
 
     // Resources: read をブリッジ
     this.server.setRequestHandler(
@@ -151,4 +145,3 @@ gateway.start().catch((error) => {
   console.error("Fatal error:", error);
   process.exit(1);
 });
-

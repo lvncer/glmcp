@@ -532,7 +532,6 @@ export class ViewerMCPServer {
   }
 
   // ===== ツール実装 =====
-
   private async loadModel(args: { filePath: string }) {
     return this.modelService.loadModel(args);
   }
@@ -541,11 +540,18 @@ export class ViewerMCPServer {
     return this.modelService.listAssets(args);
   }
 
-  private async loadAnimation(args: { animationPath: string; animationName: string }) {
+  private async loadAnimation(args: {
+    animationPath: string;
+    animationName: string;
+  }) {
     return this.modelService.loadAnimation(args);
   }
 
-  private async playAnimation(args: { animationName: string; loop?: boolean; fadeInDuration?: number }) {
+  private async playAnimation(args: {
+    animationName: string;
+    loop?: boolean;
+    fadeInDuration?: number;
+  }) {
     return this.modelService.playAnimation(args);
   }
 
