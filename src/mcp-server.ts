@@ -28,7 +28,6 @@ import { ModelService } from "./services/index.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// VRMモデルの状態管理
 interface ModelState {
   modelPath: string | null;
   isLoaded: boolean;
@@ -144,7 +143,6 @@ export class ViewerMCPServer {
       }
     );
 
-    // VRM 状態初期化
     this.modelState = {
       modelPath: "standard.glb",
       isLoaded: true,
@@ -153,7 +151,6 @@ export class ViewerMCPServer {
 
     this.connectedClients = new Set();
 
-    // VRM Service 初期化
     this.modelService = new ModelService(
       this.modelState,
       {

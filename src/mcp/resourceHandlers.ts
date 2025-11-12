@@ -75,8 +75,8 @@ export async function handleResourceRead(server: any, uri: string) {
           name: "アニメーション再生",
           calls: [
             { tool: "list_assets", arguments: { type: "animations" } },
-            { tool: "load_animation", arguments: { animationPath: "standard.glb", animationName: "standard" } },
-            { tool: "play_animation", arguments: { animationName: "standard", loop: true, fadeInDuration: 0.2 } },
+            { tool: "load_animation", arguments: { animationPath: "CesiumMan.glb", animationName: "cesium" } },
+            { tool: "play_animation", arguments: { animationName: "cesium", loop: true, fadeInDuration: 0.2 } },
           ],
         },
       ],
