@@ -1,7 +1,7 @@
-import { VRMMCPServer } from "../mcp-server.js";
+import { ViewerMCPServer } from "../mcp-server.js";
 
 async function main() {
-  const server = new VRMMCPServer();
+  const server = new ViewerMCPServer();
   await server.run();
 }
 

@@ -24,11 +24,9 @@ export async function handleResourceRead(server: any, uri: string) {
 
   if (uri === "mcp://viewer/status") {
     const status = {
-      isLoaded: server.vrmState?.isLoaded,
-      modelPath: server.vrmState?.modelPath,
-      expressions: Object.fromEntries(server.vrmState?.expressions || []),
-      pose: server.vrmState?.pose,
-      loadedAnimations: server.vrmState?.loadedAnimations,
+      isLoaded: server.modelState?.isLoaded,
+      modelPath: server.modelState?.modelPath,
+      loadedAnimations: server.modelState?.loadedAnimations,
     };
     return {
       contents: [{ type: "text", text: JSON.stringify(status, null, 2) }],
@@ -38,7 +36,7 @@ export async function handleResourceRead(server: any, uri: string) {
   if (uri === "mcp://viewer/files") {
     const result: any = {};
     try {
-      const modelFiles = await fs.readdir(server.vrmModelsDir);
+      const modelFiles = await fs.readdir(server.modelsDir);
       result.models = modelFiles.filter(
         (f: string) => f.endsWith(".glb") || f.endsWith(".gltf")
       );
@@ -46,7 +44,7 @@ export async function handleResourceRead(server: any, uri: string) {
       result.models = [];
     }
     try {
-      const animFiles = await fs.readdir(server.vrmaAnimationsDir);
+      const animFiles = await fs.readdir(server.animationsDir);
       result.animations = animFiles.filter(
         (f: string) => f.endsWith(".glb") || f.endsWith(".gltf")
       );
@@ -136,8 +134,8 @@ export async function handleResourceRead(server: any, uri: string) {
     }
     // Search models first, then animations
     const candidates: Array<{ baseDir: string; servedPrefix: string }> = [
-      { baseDir: server.vrmModelsDir, servedPrefix: "/models/" },
-      { baseDir: server.vrmaAnimationsDir, servedPrefix: "/animations/" },
+      { baseDir: server.modelsDir, servedPrefix: "/models/" },
+      { baseDir: server.animationsDir, servedPrefix: "/animations/" },
     ];
     for (const c of candidates) {
       const fullPath = path.join(c.baseDir, name);

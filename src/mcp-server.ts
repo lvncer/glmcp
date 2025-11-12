@@ -22,22 +22,16 @@ import { getTools } from "./mcp/tools.js";
 import { getResources } from "./mcp/resources.js";
 import { toolHandlers } from "./mcp/toolHandlers.js";
 import { handleResourceRead } from "./mcp/resourceHandlers.js";
-import { VRMService } from "./services/index.js";
+import { ModelService } from "./services/index.js";
 
 // ESM での __dirname 取得
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // VRMモデルの状態管理
-interface VRMState {
+interface ModelState {
   modelPath: string | null;
   isLoaded: boolean;
-  expressions: Map<string, number>;
-  pose: {
-    position: { x: number; y: number; z: number };
-    rotation: { x: number; y: number; z: number };
-  };
-  bones: Map<string, { x: number; y: number; z: number; w: number }>;
   loadedAnimations: string[];
 }
 
@@ -83,11 +77,11 @@ class RateLimiter {
   }
 }
 
-export class VRMMCPServer {
+export class ViewerMCPServer {
   private mcpServer: Server;
   private expressApp: express.Application;
   private wss: WebSocketServer;
-  private vrmState: VRMState;
+  private modelState: ModelState;
   private connectedClients: Set<WebSocket>;
   private sseTransports = new Map<string, SSEServerTransport>();
   private viewerSSEClients = new Set<express.Response>();
@@ -96,21 +90,21 @@ export class VRMMCPServer {
   private serverStartTime: number;
   private recentEvents: any[];
   private maxRecentEvents = 100;
-  private vrmService!: VRMService;
+  private modelService!: ModelService;
 
   // 環境変数から読み取り
-  private vrmModelsDir: string;
-  private vrmaAnimationsDir: string;
+  private modelsDir: string;
+  private animationsDir: string;
   private viewerPort: number;
   private mcpApiKey: string | undefined;
   private allowedOrigins: string[];
 
   constructor() {
     // 環境変数またはデフォルトパス
-    this.vrmModelsDir =
+    this.modelsDir =
       process.env.VRM_MODELS_DIR || path.join(__dirname, "../public/models");
 
-    this.vrmaAnimationsDir =
+    this.animationsDir =
       process.env.VRMA_ANIMATIONS_DIR ||
       path.join(__dirname, "../public/animations");
 
@@ -123,9 +117,9 @@ export class VRMMCPServer {
     this.serverStartTime = Date.now();
     this.recentEvents = [];
 
-    console.error("=== VRM MCP Server Configuration ===");
-    console.error(`VRM Models Dir: ${this.vrmModelsDir}`);
-    console.error(`VRMA Animations Dir: ${this.vrmaAnimationsDir}`);
+    console.error("=== Viewer MCP Server Configuration ===");
+    console.error(`Models Dir: ${this.modelsDir}`);
+    console.error(`Animations Dir: ${this.animationsDir}`);
     console.error(`Viewer Port: ${this.viewerPort}`);
     console.error(`MCP API Key: ${this.mcpApiKey ? "SET" : "NOT SET"}`);
     console.error(`Allowed Origins: ${this.allowedOrigins.join(", ")}`);
@@ -151,26 +145,20 @@ export class VRMMCPServer {
     );
 
     // VRM 状態初期化
-    this.vrmState = {
+    this.modelState = {
       modelPath: "standard.glb",
       isLoaded: true,
-      expressions: new Map(),
-      pose: {
-        position: { x: 0, y: 0, z: 0 },
-        rotation: { x: 0, y: 0, z: 0 },
-      },
-      bones: new Map(),
       loadedAnimations: [],
     };
 
     this.connectedClients = new Set();
 
     // VRM Service 初期化
-    this.vrmService = new VRMService(
-      this.vrmState,
+    this.modelService = new ModelService(
+      this.modelState,
       {
-        vrmModelsDir: this.vrmModelsDir,
-        vrmaAnimationsDir: this.vrmaAnimationsDir,
+        modelsDir: this.modelsDir,
+        animationsDir: this.animationsDir,
       },
       (message) => this.broadcast(message),
       (event, data) => this.logEvent(event, data)
@@ -184,8 +172,8 @@ export class VRMMCPServer {
     // Viteビルド済みクライアント: dist/client (dist からの相対パスで __dirname/client)
     this.expressApp.use(express.static(path.join(__dirname, "client")));
     // 3Dアセット
-    this.expressApp.use("/models", express.static(this.vrmModelsDir));
-    this.expressApp.use("/animations", express.static(this.vrmaAnimationsDir));
+    this.expressApp.use("/models", express.static(this.modelsDir));
+    this.expressApp.use("/animations", express.static(this.animationsDir));
     // 互換: public 配下（必要に応じて）
     this.expressApp.use(express.static(path.join(__dirname, "../public")));
 
@@ -393,13 +381,13 @@ export class VRMMCPServer {
       res.write(`retry: 10000\n\n`);
       res.write(
         `event: init\ndata: ${JSON.stringify({
-          modelPath: this.vrmState.modelPath,
-          isLoaded: this.vrmState.isLoaded,
+          modelPath: this.modelState.modelPath,
+          isLoaded: this.modelState.isLoaded,
         })}\n\n`
       );
 
-      if (this.vrmState.modelPath) {
-        const filePath = `/models/${this.vrmState.modelPath}`;
+      if (this.modelState.modelPath) {
+        const filePath = `/models/${this.modelState.modelPath}`;
         // Emit generic event only
         res.write(
           `event: load_model\ndata: ${JSON.stringify({ filePath })}\n\n`
@@ -483,8 +471,8 @@ export class VRMMCPServer {
         JSON.stringify({
           type: "init",
           data: {
-            modelPath: this.vrmState.modelPath,
-            isLoaded: this.vrmState.isLoaded,
+            modelPath: this.modelState.modelPath,
+            isLoaded: this.modelState.isLoaded,
           },
         })
       );
@@ -548,52 +536,29 @@ export class VRMMCPServer {
 
   // ===== ツール実装 =====
 
-  private async loadVRMModel(args: { filePath: string }) {
-    return this.vrmService.loadVRMModel(args);
+  private async loadModel(args: { filePath: string }) {
+    return this.modelService.loadModel(args);
   }
 
-  private async setVRMExpression(args: { expression: string; weight: number }) {
-    return this.vrmService.setVRMExpression(args);
+  private async listAssets(args: { type?: string }) {
+    return this.modelService.listAssets(args);
   }
 
-  private async setVRMPose(args: { position?: any; rotation?: any }) {
-    return this.vrmService.setVRMPose(args);
+  private async loadAnimation(args: { animationPath: string; animationName: string }) {
+    return this.modelService.loadAnimation(args);
   }
 
-  private async animateVRMBone(args: { boneName: string; rotation: any }) {
-    return this.vrmService.animateVRMBone(args);
+  private async playAnimation(args: { animationName: string; loop?: boolean; fadeInDuration?: number }) {
+    return this.modelService.playAnimation(args);
   }
 
-  private async getVRMStatus() {
-    return this.vrmService.getVRMStatus();
-  }
-
-  private async listVRMFiles(args: { type?: string }) {
-    return this.vrmService.listVRMFiles(args);
-  }
-
-  private async loadGLTFAnimation(args: {
-    animationPath: string;
-    animationName: string;
-  }) {
-    return this.vrmService.loadGLTFAnimation(args);
-  }
-
-  private async playGLTFAnimation(args: {
-    animationName: string;
-    loop?: boolean;
-    fadeInDuration?: number;
-  }) {
-    return this.vrmService.playGLTFAnimation(args);
-  }
-
-  private async stopGLTFAnimation(args: { fadeOutDuration?: number }) {
-    return this.vrmService.stopGLTFAnimation(args);
+  private async stopAnimation(args: { fadeOutDuration?: number }) {
+    return this.modelService.stopAnimation(args);
   }
 
   async run(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.mcpServer.connect(transport);
-    console.error("🚀 VRM MCP Server が起動しました (stdio + HTTP)");
+    console.error("🚀 Viewer MCP Server が起動しました (stdio + HTTP)");
   }
 }
