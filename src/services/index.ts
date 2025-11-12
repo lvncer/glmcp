@@ -36,6 +36,11 @@ export class VRMService {
       await fs.access(fullPath);
       this.state.modelPath = filePath;
       this.state.isLoaded = true;
+      // Broadcast generic and legacy event names for compatibility
+      this.broadcast({
+        type: "load_model",
+        data: { filePath: `/models/${filePath}` },
+      });
       this.broadcast({
         type: "load_vrm_model",
         data: { filePath: `/models/${filePath}` },
@@ -128,7 +133,10 @@ export class VRMService {
     if (type === "models" || type === "all") {
       try {
         const files = await fs.readdir(this.dirs.vrmModelsDir);
-        result.models = files.filter((f) => f.endsWith(".vrm"));
+        // glTF/GLB models (VRM is deprecated)
+        result.models = files.filter(
+          (f) => f.endsWith(".glb") || f.endsWith(".gltf")
+        );
       } catch {
         result.models = [];
       }
@@ -174,6 +182,11 @@ export class VRMService {
       if (!this.state.loadedAnimations.includes(animationName)) {
         this.state.loadedAnimations.push(animationName);
       }
+      // Broadcast generic and legacy event names for compatibility
+      this.broadcast({
+        type: "load_animation",
+        data: { animationPath: `/animations/${animationPath}`, animationName },
+      });
       this.broadcast({
         type: "load_gltf_animation",
         data: { animationPath: `/animations/${animationPath}`, animationName },
@@ -205,6 +218,11 @@ export class VRMService {
     if (!this.state.loadedAnimations.includes(animationName)) {
       throw new Error(`アニメーションが未ロードです: ${animationName}`);
     }
+    // Broadcast generic and legacy event names for compatibility
+    this.broadcast({
+      type: "play_animation",
+      data: { animationName, loop, fadeInDuration },
+    });
     this.broadcast({
       type: "play_gltf_animation",
       data: { animationName, loop, fadeInDuration },
@@ -228,6 +246,8 @@ export class VRMService {
 
   async stopGLTFAnimation(args: { fadeOutDuration?: number }) {
     const { fadeOutDuration } = args;
+    // Broadcast generic and legacy event names for compatibility
+    this.broadcast({ type: "stop_animation", data: { fadeOutDuration } });
     this.broadcast({ type: "stop_gltf_animation", data: { fadeOutDuration } });
     this.logEvent("stop_gltf_animation", { fadeOutDuration });
     return {
