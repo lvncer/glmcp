@@ -95,7 +95,7 @@ function Scene(props: {
                 ? mod.default.retargetClip
                 : null;
             const retargeted = retargetClipFn
-              ? retargetClipFn(sourceSkinned, targetSkinned, clipToUse)
+              ? retargetClipFn(targetSkinned, sourceSkinned, clipToUse)
               : null;
             if (retargeted) {
               clipToUse = retargeted as THREE.AnimationClip;
