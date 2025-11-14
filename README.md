@@ -3,6 +3,8 @@
 gltf モデルを AI が自然言語で制御できる MCP サーバー。
 Claude Desktop から自然言語で指示するだけで、Web ブラウザで gltf モデルがリアルタイムに動きます。
 
+**IMPORTANT!!!**: CHECK [LICENSE](./LICENSES/LICENSE.default-model.md) YOU USE [default.glb](./public/models/default.glb).
+
 ## セットアップ
 
 このプロジェクトは 2 つの運用モードをサポートしています：
@@ -36,13 +38,13 @@ Claude Desktop から自然言語で指示するだけで、Web ブラウザで 
 
 ## 利用可能なツール（汎用）
 
-| Tool             | 説明                                     | 例                                       |
-| ---------------- | ---------------------------------------- | ---------------------------------------- |
-| `list_assets`    | 利用可能なモデル/アニメの一覧取得        | `{ "type": "models" }`                 |
-| `load_model`     | モデル(.glb/.gltf)を読み込み             | `{ "filePath": "standard.glb" }`      |
-| `load_animation` | 外部アニメ(.glb/.gltf)を読み込み         | `{ "animationPath": "CesiumMan.glb", "animationName": "cesium" }` |
-| `play_animation` | 読み込み済みアニメを再生                 | `{ "animationName": "cesium", "loop": true }`           |
-| `stop_animation` | 再生中のアニメーションを停止             | `{ "fadeOutDuration": 0.2 }`           |
+| Tool             | 説明                              | 例                                                                |
+| ---------------- | --------------------------------- | ----------------------------------------------------------------- |
+| `list_assets`    | 利用可能なモデル/アニメの一覧取得 | `{ "type": "models" }`                                            |
+| `load_model`     | モデル(.glb/.gltf)を読み込み      | `{ "filePath": "standard.glb" }`                                  |
+| `load_animation` | 外部アニメ(.glb/.gltf)を読み込み  | `{ "animationPath": "CesiumMan.glb", "animationName": "cesium" }` |
+| `play_animation` | 読み込み済みアニメを再生          | `{ "animationName": "cesium", "loop": true }`                     |
+| `stop_animation` | 再生中のアニメーションを停止      | `{ "fadeOutDuration": 0.2 }`                                      |
 
 ## プロジェクト構造
 

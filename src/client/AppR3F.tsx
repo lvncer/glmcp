@@ -14,6 +14,7 @@ function Scene(props: {
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const currentActionRef = useRef<THREE.AnimationAction | null>(null);
   const loadedClipsRef = useRef<Map<string, THREE.AnimationClip>>(new Map());
+  const targetSkinnedRef = useRef<THREE.SkinnedMesh | null>(null);
 
   useFrame((_, dt) => {
     if (mixerRef.current) mixerRef.current.update(dt);
@@ -28,6 +29,17 @@ function Scene(props: {
     );
     loader.setDRACOLoader(draco);
     return loader;
+  }
+
+  function findFirstSkinned(object: THREE.Object3D | undefined | null): THREE.SkinnedMesh | null {
+    if (!object) return null;
+    let found: THREE.SkinnedMesh | null = null;
+    object.traverse((n) => {
+      if (!found && (n as any).isSkinnedMesh) {
+        found = n as THREE.SkinnedMesh;
+      }
+    });
+    return found;
   }
 
   async function loadModel(filePath: string) {
@@ -46,6 +58,7 @@ function Scene(props: {
       rootRef.current.add(scene);
 
       mixerRef.current = new THREE.AnimationMixer(scene);
+      targetSkinnedRef.current = findFirstSkinned(scene);
       loadedClipsRef.current.clear();
       if (currentActionRef.current) {
         currentActionRef.current.stop();
@@ -67,11 +80,10 @@ function Scene(props: {
       const clips: THREE.AnimationClip[] = (gltf as any).animations || [];
       if (clips.length > 0) {
         const sourceRoot: THREE.Object3D | undefined = (gltf as any).scene;
-        const targetRoot =
-          (rootRef.current?.children[0] as THREE.Object3D | undefined) ??
-          ((rootRef.current as unknown) as THREE.Object3D | null);
+        const sourceSkinned = findFirstSkinned(sourceRoot);
+        const targetSkinned = targetSkinnedRef.current;
         let clipToUse = clips[0];
-        if (sourceRoot && targetRoot) {
+        if (sourceSkinned && targetSkinned) {
           try {
             const mod: any = await import(
               "three/examples/jsm/utils/SkeletonUtils.js"
@@ -83,7 +95,7 @@ function Scene(props: {
                 ? mod.default.retargetClip
                 : null;
             const retargeted = retargetClipFn
-              ? retargetClipFn(sourceRoot, targetRoot, clipToUse)
+              ? retargetClipFn(sourceSkinned, targetSkinned, clipToUse)
               : null;
             if (retargeted) {
               clipToUse = retargeted as THREE.AnimationClip;
@@ -97,7 +109,7 @@ function Scene(props: {
           }
         } else {
           console.warn(
-            "No target or source root for retargeting; using original clip"
+            "No source/target SkinnedMesh; using original clip"
           );
         }
         loadedClipsRef.current.set(animationName, clipToUse);
@@ -113,7 +125,7 @@ function Scene(props: {
     animationName: string,
     opts?: { loop?: boolean; fadeInDuration?: number }
   ) {
-    const group = rootRef.current;
+    const group = (targetSkinnedRef.current as unknown as THREE.Object3D) || rootRef.current;
     const mixer = mixerRef.current;
     if (!group || !mixer) return;
 

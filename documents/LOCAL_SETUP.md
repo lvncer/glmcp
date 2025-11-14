@@ -38,7 +38,7 @@ nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
 ```json
 {
   "mcpServers": {
-    "viewer-control": {
+    "coeur": {
       "command": "node",
       "args": ["/path/to/your-project/dist/app/server.js"],
       "env": {
