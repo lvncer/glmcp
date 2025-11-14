@@ -147,7 +147,7 @@ export class ViewerMCPServer {
     );
 
     this.modelState = {
-      modelPath: "standard.glb",
+      modelPath: "default.glb",
       isLoaded: true,
       loadedAnimations: [],
     };
