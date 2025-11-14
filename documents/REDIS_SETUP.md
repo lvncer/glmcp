@@ -1,6 +1,6 @@
 # Redis セッション管理セットアップガイド
 
-VRM MCP サーバーをリモート環境（Railway 等）で動かす場合、複数インスタンス間でセッション情報を共有するために Redis を使用します。
+Viewer MCP サーバーをリモート環境（Railway 等）で動かす場合、複数インスタンス間でセッション情報を共有するために Redis を使用します。
 
 ## なぜ Redis が必要？
 
@@ -53,7 +53,7 @@ VRM MCP サーバーをリモート環境（Railway 等）で動かす場合、�
 
 1. **Create Database** をクリック
 2. 設定：
-   - **Name**: `vrm-mcp-sessions`
+   - **Name**: `viewer-mcp-sessions`
    - **Type**: **Global**（推奨）
    - **Primary Region**: **Tokyo** または近い地域
    - **Read Regions**: 必要に応じて追加
@@ -268,7 +268,7 @@ Redis Sessions: DISABLED (in-memory)
 - **ストレージ**: 256MB
 - **帯域幅**: 200MB/日
 
-**VRM MCP の使用量目安**:
+**Viewer MCP の使用量目安**:
 
 - セッション作成: 1 コマンド
 - セッション延長（30 秒ごと）: 1 コマンド

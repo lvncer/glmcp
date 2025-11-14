@@ -3,6 +3,8 @@
 gltf モデルを AI が自然言語で制御できる MCP サーバー。
 Claude Desktop から自然言語で指示するだけで、Web ブラウザで gltf モデルがリアルタイムに動きます。
 
+**IMPORTANT!!!**: CHECK [LICENSE](./LICENSES/LICENSE.default-model.md) YOU USE [default.glb](./public/models/default.glb).
+
 ## セットアップ
 
 このプロジェクトは 2 つの運用モードをサポートしています：
@@ -34,19 +36,15 @@ Claude Desktop から自然言語で指示するだけで、Web ブラウザで 
 
 - [ツールとユースケース](./documents/tool-usecases.md)
 
-## 利用可能なツール
+## 利用可能なツール（汎用）
 
-| Tool                  | 説明                             | 使用例                         |
-| --------------------- | -------------------------------- | ------------------------------ |
-| `list_vrm_files`      | 利用可能な VRM/glTF ファイル一覧 | 「どんな VRM がある？」        |
-| `load_vrm_model`      | VRM モデル読み込み               | 「character.vrm を読み込んで」 |
-| `set_vrm_expression`  | 表情設定                         | 「嬉しい表情にして」           |
-| `set_vrm_pose`        | ポーズ設定                       | 「右を向いて」                 |
-| `animate_vrm_bone`    | ボーン操作                       | 「右手を上げて」               |
-| `load_gltf_animation` | glTF アニメーション読み込み      | 「walk.glb を読み込んで」      |
-| `play_gltf_animation` | アニメーション再生               | 「挨拶して」                   |
-| `stop_gltf_animation` | アニメーション停止               | 「止めて」                     |
-| `get_vrm_status`      | 状態取得                         | 「現在の状態は？」             |
+| Tool             | 説明                              | 例                                                                |
+| ---------------- | --------------------------------- | ----------------------------------------------------------------- |
+| `list_assets`    | 利用可能なモデル/アニメの一覧取得 | `{ "type": "models" }`                                            |
+| `load_model`     | モデル(.glb/.gltf)を読み込み      | `{ "filePath": "standard.glb" }`                                  |
+| `load_animation` | 外部アニメ(.glb/.gltf)を読み込み  | `{ "animationPath": "CesiumMan.glb", "animationName": "cesium" }` |
+| `play_animation` | 読み込み済みアニメを再生          | `{ "animationName": "cesium", "loop": true }`                     |
+| `stop_animation` | 再生中のアニメーションを停止      | `{ "fadeOutDuration": 0.2 }`                                      |
 
 ## プロジェクト構造
 
@@ -56,21 +54,22 @@ coeur/
 │   ├── app/
 │   │   └── server.ts
 │   ├── services/
-│   │   └── index.ts            # VRMサービス
+│   │   └── index.ts            # モデル/アニメーション用サービス
 │   ├── mcp/
-│   │   ├── resourceHandler.ts  # MCPリソースハンドラー
+│   │   ├── resourceHandlers.ts # MCPリソースハンドラー
 │   │   ├── resources.ts        # MCPリソース
 │   │   ├── toolHandlers.ts     # MCPツールハンドラー
 │   │   └── tools.ts            # MCPツール
 │   ├── client/
-│   │   └── index.ts            # VRMサービス
+│   │   ├── AppR3F.tsx          # R3F+Drei ベースのビューア
+│   │   └── main.tsx            # クライアントエントリ
 │   ├── mcp-server.ts           # MCPサーバー実装（stdio + SSE）
 │   ├── gateway.ts              # stdio↔SSEゲートウェイ（Claude Desktop用）
 │   └── redis-client.ts
 ├── public/
-│   ├── models/                 # VRMモデル配置（デフォルト）
+│   ├── models/                 # モデル配置（.glb/.gltf）
 │   ├── animations/             # glTFアニメーション配置（.glb/.gltf）
-│   └── index.html              # VRMビューア
+│   └── index.html              # glTFビューア
 ├── package.json
 └── README.md
 ```

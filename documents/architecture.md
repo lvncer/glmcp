@@ -1,12 +1,12 @@
-　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　# プロジェクト構造とアーキテクチャ
+# Coeur MCP Architecture
 
-## 📁 ディレクトリ構造の概要
+## ディレクトリ構造の概要
 
 ```
-vrm-mcp/
+coeur/
 ├── src/           # ローカル実行用（開発環境）
 ├── api/           # Vercel Functions用（本番環境）
-├── public/        # 静的ファイル（VRMビューア）
+├── public/        # 静的ファイル（glTFビューア）
 ├── documents/     # ドキュメント
 └── dist/          # ビルド成果物
 ```
@@ -150,7 +150,7 @@ npm run dev
 ```
 
 こんな人におすすめ:
-- Claude Desktopから直接VRMを操作したい
+- Claude Desktopから直接モデルを操作したい
 - ローカルで完結させたい
 - 無制限の接続時間が必要
 
@@ -175,7 +175,7 @@ vercel --prod
 #### `src/mcp-server.ts`（ステートフル）
 
 ```typescript
-class VRMMCPServer {
+class ViewerMCPServer {
   private sseTransports = new Map<string, SSEServerTransport>();
   private viewerSSEClients = new Set<express.Response>();
   

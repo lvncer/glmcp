@@ -1,23 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * VRM MCP Gateway
- * Claude Desktop (stdio) ⇄ Remote MCP Server (SSE) のブリッジ
- * 
- * 使い方:
- * 1. 環境変数で設定:
- *    export MCP_REMOTE_URL="https://your-domain.vercel.app/api/mcp/sse"
- *    export MCP_API_KEY="your-api-key"
- * 
- * 2. Claude Desktopの設定に追加:
- *    "mcpServers": {
- *      "vrm": {
- *        "command": "node",
- *        "args": ["/path/to/gateway.js"]
- *      }
- *    }
- */
-
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -27,7 +9,8 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
-const REMOTE_URL = process.env.MCP_REMOTE_URL || "http://localhost:3000/api/mcp/sse";
+const REMOTE_URL =
+  process.env.MCP_REMOTE_URL || "http://localhost:3000/api/mcp/sse";
 const API_KEY = process.env.MCP_API_KEY;
 
 class MCPGateway {
@@ -38,7 +21,7 @@ class MCPGateway {
     // ローカル側: Claude DesktopとStdio通信
     this.server = new Server(
       {
-        name: "vrm-mcp-gateway",
+        name: "viewer-mcp-gateway",
         version: "0.1.0",
       },
       {
@@ -52,7 +35,7 @@ class MCPGateway {
     // リモート側: SSEクライアント
     this.client = new Client(
       {
-        name: "vrm-mcp-gateway-client",
+        name: "viewer-mcp-gateway-client",
         version: "0.1.0",
       },
       {
@@ -65,21 +48,17 @@ class MCPGateway {
 
   private setupBridge(): void {
     // Claude Desktopからのツール一覧リクエストをリモートに転送
-    this.server.setRequestHandler(
-      { method: "tools/list" } as any,
-      async () => {
-        try {
-          const result = await this.client.request(
-            { method: "tools/list" },
-            { method: "tools/list" } as any
-          );
-          return result;
-        } catch (error) {
-          console.error("Failed to list tools from remote:", error);
-          return { tools: [] };
-        }
+    this.server.setRequestHandler({ method: "tools/list" } as any, async () => {
+      try {
+        const result = await this.client.request({ method: "tools/list" }, {
+          method: "tools/list",
+        } as any);
+        return result;
+      } catch (error) {
+        console.error("Failed to list tools from remote:", error);
+        return { tools: [] };
       }
-    );
+    });
 
     // Claude Desktopからのツール実行リクエストをリモートに転送
     this.server.setRequestHandler(
@@ -99,21 +78,18 @@ class MCPGateway {
     );
 
     // Resources: list をブリッジ
-    this.server.setRequestHandler(
-      ListResourcesRequestSchema,
-      async () => {
-        try {
-          const result = await this.client.request(
-            { method: "resources/list" } as any,
-            ListResourcesRequestSchema
-          );
-          return result;
-        } catch (error) {
-          console.error("Failed to list resources from remote:", error);
-          return { resources: [] };
-        }
+    this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
+      try {
+        const result = await this.client.request(
+          { method: "resources/list" } as any,
+          ListResourcesRequestSchema
+        );
+        return result;
+      } catch (error) {
+        console.error("Failed to list resources from remote:", error);
+        return { resources: [] };
       }
-    );
+    });
 
     // Resources: read をブリッジ
     this.server.setRequestHandler(
@@ -134,7 +110,7 @@ class MCPGateway {
   }
 
   async start(): Promise<void> {
-    console.error("🌉 VRM MCP Gateway starting...");
+    console.error("🌉 Viewer MCP Gateway starting...");
     console.error(`📡 Remote URL: ${REMOTE_URL}`);
 
     try {
@@ -169,4 +145,3 @@ gateway.start().catch((error) => {
   console.error("Fatal error:", error);
   process.exit(1);
 });
-

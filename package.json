@@ -1,12 +1,12 @@
 {
-  "name": "vrm-mcp",
+  "name": "coeur",
   "version": "0.1.0",
-  "description": "VRM Model Control via MCP Protocol - AI-driven VRM animation system",
+  "description": "glTF Viewer via MCP Protocol - AI-driven model + animation system",
   "type": "module",
-  "main": "dist/mcp-server.js",
+  "main": "dist/app/server.js",
   "bin": {
-    "vrm-mcp-server": "./dist/app/server.js",
-    "vrm-mcp-gateway": "./dist/gateway.js"
+    "coeur-mcp-server": "./dist/app/server.js",
+    "coeur-mcp-gateway": "./dist/gateway.js"
   },
   "scripts": {
     "build": "tsc && vite build",
@@ -18,18 +18,17 @@
     "server:dev": "nodemon dist/app/server.js"
   },
   "keywords": [
-    "vrm",
     "mcp",
     "ai",
     "3d",
-    "animation",
-    "claude"
+    "animation"
   ],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
-    "@pixiv/three-vrm": "^3.0.0",
+    "@react-three/drei": "^9.103.0",
+    "@react-three/fiber": "^8.16.0",
     "@upstash/redis": "^1.35.6",
     "express": "^4.18.2",
     "node-fetch": "^3.3.2",
