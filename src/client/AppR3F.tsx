@@ -83,7 +83,14 @@ function Scene(props: {
         const sourceSkinned = findFirstSkinned(sourceRoot);
         const targetSkinned = targetSkinnedRef.current;
         let clipToUse = clips[0];
-        if (sourceSkinned && targetSkinned) {
+        const sourceBones = (sourceSkinned as any)?.skeleton?.bones;
+        const targetBones = (targetSkinned as any)?.skeleton?.bones;
+        const canCompareBones =
+          Array.isArray(sourceBones) && Array.isArray(targetBones);
+        const shouldRetarget =
+          canCompareBones && sourceBones.length !== targetBones.length;
+
+        if (sourceSkinned && targetSkinned && shouldRetarget) {
           try {
             const mod: any = await import(
               "three/examples/jsm/utils/SkeletonUtils.js"
@@ -107,9 +114,13 @@ function Scene(props: {
           } catch (err) {
             console.warn("Retarget failed; using original clip", err);
           }
-        } else {
+        } else if (!sourceSkinned || !targetSkinned) {
           console.warn(
             "No source/target SkinnedMesh; using original clip"
+          );
+        } else {
+          console.warn(
+            "Source/target skeletons look compatible; using original clip without retarget"
           );
         }
         loadedClipsRef.current.set(animationName, clipToUse);
