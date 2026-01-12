@@ -17,11 +17,9 @@ Claude Desktop などの MCP クライアントから自然言語で指示する
 
    - [リモートセットアップガイド](./documents/REMOTE_SETUP.md)
 
-## 使い方
+## 開発者向けドキュメント
 
-利用可能なツールと使い方をまとめています。
-
-- [ツールとユースケース](./documents/tool-usecases.md)
+- [ツール一覧](./documents/tools.md)
 
 ## プロジェクト構造
 
