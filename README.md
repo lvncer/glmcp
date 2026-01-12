@@ -1,34 +1,21 @@
-# Coeur MCP Server
+# glmcp
+
+[LICENSE](./LICENSES/)
 
 gltf モデルを AI が自然言語で制御できる MCP サーバー。
-Claude Desktop から自然言語で指示するだけで、Web ブラウザで gltf モデルがリアルタイムに動きます。
-
-**IMPORTANT!!!**: CHECK [LICENSE](./LICENSES/LICENSE.default-model.md) YOU USE [default.glb](./public/models/default.glb).
+Claude Desktop などの MCP クライアントから自然言語で指示するだけで、Web ブラウザで gltf モデルがリアルタイムに動きます。
 
 ## セットアップ
 
 このプロジェクトは 2 つの運用モードをサポートしています：
 
-1. **ローカルモード**: ローカル環境で MCP サーバーを起動（従来の方法）
+1. ローカルモード: ローカル環境で MCP サーバーを起動（推奨）
 
    - [ローカルセットアップガイド](./documents/LOCAL_SETUP.md)
 
-2. **リモートモード**（推奨）
+2. リモートモード（停止中）
 
    - [リモートセットアップガイド](./documents/REMOTE_SETUP.md)
-
-     ```json
-     {
-       "mcpServers": {
-         "coeur": {
-           "url": "https://coeur.up.railway.app/api/mcp/sse",
-           "headers": {
-             "x-api-key": "your-super-secret-key-12345"
-           }
-         }
-       }
-     }
-     ```
 
 ## 使い方
 
@@ -54,22 +41,22 @@ coeur/
 │   ├── app/
 │   │   └── server.ts
 │   ├── services/
-│   │   └── index.ts            # モデル/アニメーション用サービス
+│   │   └── index.ts             # モデル/アニメーション用サービス
 │   ├── mcp/
-│   │   ├── resourceHandlers.ts # MCPリソースハンドラー
-│   │   ├── resources.ts        # MCPリソース
-│   │   ├── toolHandlers.ts     # MCPツールハンドラー
-│   │   └── tools.ts            # MCPツール
+│   │   ├── resourceHandlers.ts  # MCPリソースハンドラー
+│   │   ├── resources.ts         # MCPリソース
+│   │   ├── toolHandlers.ts      # MCPツールハンドラー
+│   │   └── tools.ts             # MCPツール
 │   ├── client/
-│   │   ├── AppR3F.tsx          # R3F+Drei ベースのビューア
-│   │   └── main.tsx            # クライアントエントリ
-│   ├── mcp-server.ts           # MCPサーバー実装（stdio + SSE）
-│   ├── gateway.ts              # stdio↔SSEゲートウェイ（Claude Desktop用）
+│   │   ├── AppR3F.tsx           # R3F+Drei ベースのビューア
+│   │   └── main.tsx             # クライアントエントリ
+│   ├── mcp-server.ts            # MCPサーバー実装（stdio + SSE）
+│   ├── gateway.ts               # stdio↔SSEゲートウェイ（Claude Desktop用）
 │   └── redis-client.ts
 ├── public/
-│   ├── models/                 # モデル配置（.glb/.gltf）
-│   ├── animations/             # glTFアニメーション配置（.glb/.gltf）
-│   └── index.html              # glTFビューア
+│   ├── models/                  # モデル配置（.glb/.gltf）
+│   ├── animations/              # glTFアニメーション配置（.glb/.gltf）
+│   └── index.html               # glTFビューア
 ├── package.json
 └── README.md
 ```
